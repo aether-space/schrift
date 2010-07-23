@@ -136,3 +136,5 @@ if __name__ == '__main__':
     import sys
     if sys.argv[1:]:
         app.run(sys.argv[1], int(sys.argv[2]))
+    else:
+        app.run()
