@@ -1,5 +1,5 @@
 a, h1, h2, h3 {
-    color: #bb0000;
+    color: #5C85FF;
 }
 
 html {
@@ -13,6 +13,7 @@ body {
     -moz-box-shadow: 5px 5px 5px #ccc;
     font-family: sans-serif;
     margin: 2em auto;
+    min-width: 600px;
     width: 60%;
 }
 
@@ -81,6 +82,26 @@ body {
     font-size: 1em;
 }
 
+.entry ul {
+    list-style: square;
+    margin: 0;
+}
+
+.entry ul li {
+    color: #333;
+}
+
+.entry p {
+    color: #333;
+    line-height: 1.25em;
+}
+
+.entry pre{
+    border: 1px solid #bbaaaa;
+    margin: 1em 0;
+    padding: .5em;
+    overflow: auto;
+}
 
 /* OLD */
 .add-entry      { font-size: 0.9em; border-bottom: 1px solid #ccc; }
