@@ -1,12 +1,12 @@
 import datetime
-import itertools
+import re
+import unicodedata
 
 import docutils.core
 import docutils.writers.html4css1
 import flask
 import pygments
 import pygments.lexers, pygments.formatters
-import werkzeug
 from docutils import nodes
 from docutils.parsers import rst
 from flaskext import sqlalchemy
@@ -59,6 +59,7 @@ class Post(db.Model):
                         backref=sqlalchemy.orm.backref("posts", lazy="dynamic"))
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     title = db.Column(db.String(255), nullable=False)
+    slug = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text)
     html = db.Column(db.Text)
     pub_date = db.Column(db.DateTime)
@@ -111,6 +112,13 @@ class Writer(docutils.writers.html4css1.Writer):
         docutils.writers.html4css1.Writer.__init__(self)
         self.translator_class = Translator
 
+### Helpers
+
+def slugify(value):
+    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore")
+    value = re.sub(r'[^\w\s-]', '', value).strip().lower()
+    return re.sub(r'[-\s]+', '-', value)
+
 ### Views
 
 @app.route("/")
@@ -132,9 +140,9 @@ def show_entries(page, tags=None):
 def show_entries_for_tag(tags):
     return show_entries(1, tags.split(","))
 
-@app.route("/show/<id>")
-def show_entry(id):
-    entry = Post.query.get_or_404(id)
+@app.route("/show/<slug>")
+def show_entry(slug):
+    entry = Post.query.filter_by(slug=slug).first_or_404()
     return flask.render_template("show_entry.html", entry=entry)
 
 @app.route("/add")
@@ -155,6 +163,7 @@ def add_entry():
             tag = Tag(name)
             db.session.add(tag)
         post.tags.append(tag)
+    post.slug = slugify(form["title"])
     db.session.add(post)
     db.session.commit()
     return flask.redirect(flask.url_for("index"))
