@@ -2,14 +2,14 @@
 {% block body %}
   <ul class=entries>
   {% for entry in page.items %}
-      <li><h2><a href="{{ url_for('show_entry', id=entry.id) }}">{{ entry.title }}</a></h2>
-      <div class="entry">
-          {{ entry.html|safe }}
-      </div>
+  <li><h2><a href="{{ url_for('show_entry', slug=entry.slug) }}">{{ entry.title }}</a></h2>
+  <div class="entry">
+      {{ entry.html|safe }}
+  </div>
   {% else %}
     <li><em>Nothing to see here.</em>
   {% endfor %}
   </ul>
-  {% if page.prev %}<a href="{{ url_for('show_entries', start=page.prev) }}">Previous</a>{% endif %}
-{% if page.next %}<a href="{{ url_for('show_entries', start=page.next) }}">Next</a>{% endif %}
+  {% if page.has_prev %}<a href="{{ url_for('show_entries', page=page.prev_num) }}">Previous</a>{% endif %}
+  {% if page.has_next %}<a href="{{ url_for('show_entries', page=page.next_num) }}">Next</a>{% endif %}
 {% endblock %}
