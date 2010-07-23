@@ -1,3 +1,5 @@
+import datetime
+import itertools
 import string
 
 import docutils.core
@@ -8,6 +10,7 @@ import flask
 import pygments
 import pygments.lexers, pygments.formatters
 from flaskext import couchdb
+from werkzeug.contrib import atom
 
 DEBUG = True
 COUCHDB_SERVER = "http://localhost:5984/"
@@ -25,6 +28,7 @@ class BlogPost(couchdb.Document):
     content = couchdb.TextField()
     html = couchdb.TextField()
     author = couchdb.TextField()
+    published = couchdb.DateTimeField(default=datetime.datetime.now)
     tags = couchdb.ListField(couchdb.TextField())
 
     all = couchdb.ViewField("blog", string.Template("""
@@ -116,6 +120,19 @@ def add_entry():
                     html=parts["body"], author="Andy")
     post.store()
     return flask.redirect(flask.url_for('show_entries'))
+
+@app.route("/atom")
+def atom_feed():
+    feed = atom.AtomFeed("choblog", feed_url=flask.request.url,
+                         url=flask.request.host_url,
+                         subtitle="Tired musings of a chief hacking officer.")
+    for post in itertools.islice(BlogPost.all(), 10):
+        print post, vars(post)
+        feed.add(post.title, post.html, content_type="html",
+                 author=post.author,
+                 url=flask.url_for("show_entry", id=post.id), id=post.id,
+                 updated=post.published, published=post.published)
+    return feed.get_response()
 
 if __name__ == '__main__':
     import sys
