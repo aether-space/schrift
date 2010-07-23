@@ -8,6 +8,6 @@
     <li><em>Nothing to see here.</em>
   {% endfor %}
   </ul>
-  {% if page.prev %}<a href="{{ url_for('show_entries', start=page.prev) }}">Previous</a>{% endif %}
-{% if page.next %}<a href="{{ url_for('show_entries', start=page.next) }}">Next</a>{% endif %}
+  {% if page.has_prev %}<a href="{{ url_for('show_entries', page=page.prev_num) }}">Previous</a>{% endif %}
+  {% if page.has_next %}<a href="{{ url_for('show_entries', page=page.next_num) }}">Next</a>{% endif %}
 {% endblock %}

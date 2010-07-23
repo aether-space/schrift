@@ -1,56 +1,78 @@
 import datetime
 import itertools
-import string
 
 import docutils.core
 import docutils.writers.html4css1
-from docutils import nodes
-from docutils.parsers import rst
 import flask
 import pygments
 import pygments.lexers, pygments.formatters
-from flaskext import couchdb
+import werkzeug
+from docutils import nodes
+from docutils.parsers import rst
+from flaskext import sqlalchemy
+from sqlalchemy import func, Table
 from werkzeug.contrib import atom
 
 DEBUG = True
-COUCHDB_SERVER = "http://localhost:5984/"
-COUCHDB_DATABASE = "blog"
 SECRET_KEY = "XI5auBoeiH2TErtf8Hfi"
+SQLALCHEMY_DATABASE_URI = "sqlite:///blog.db"
+SQLALCHEMY_ECHO = True
 
 app = flask.Flask(__name__)
 app.config.from_object(__name__)
-manager = couchdb.CouchDBManager()
+db = sqlalchemy.SQLAlchemy(app)
 
-class BlogPost(couchdb.Document):
-    doc_type = "blogpost"
+### Models
 
-    title = couchdb.TextField()
-    content = couchdb.TextField()
-    html = couchdb.TextField()
-    author = couchdb.TextField()
-    published = couchdb.DateTimeField(default=datetime.datetime.now)
-    tags = couchdb.ListField(couchdb.TextField())
+class User(db.Model):
+    __tablename__ = "users"
 
-    all = couchdb.ViewField("blog", string.Template("""
-        function (doc) {
-            if (doc.doc_type == '$doc_type') {
-                emit(doc.time, doc);
-            };
-        }""").substitute(**locals()), descending=True)
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
 
-    tagged = couchdb.ViewField("blog", string.Template("""
-    function (doc) {
-        if (doc.doc_type == '$doc_type') {
-            doc.tags.forEach(function (tag) {
-                emit(tag, doc);
-            });
-        };
-    }""").substitute(**locals()))
+    def __init__(self, name):
+        self.name = name
 
-manager.add_document(BlogPost)
-manager.setup(app)
+    def __repr__(self):
+        return "<User '%s'>" % (self.name, )
 
-# ReST helpers
+class Tag(db.Model):
+    __tablename__ = "tags"
+
+    id = db.Column(db.Integer, primary_key=True)
+    tag = db.Column(db.String(50), nullable=False, unique=True)
+
+    def __init__(self, name):
+        self.tag = name
+
+# Association table for tags
+post_tags = Table("post_tags", db.Model.metadata,
+    db.Column("post_id", db.Integer, db.ForeignKey("posts.id")),
+    db.Column("tag_id", db.Integer, db.ForeignKey("tags.id"))
+)
+
+class Post(db.Model):
+    __tablename__ = "posts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    author = sqlalchemy.orm.relationship(User,
+                        backref=sqlalchemy.orm.backref("posts", lazy="dynamic"))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text)
+    html = db.Column(db.Text)
+    pub_date = db.Column(db.DateTime)
+    tags = sqlalchemy.orm.relationship("Tag", secondary=post_tags,
+                                       backref="posts")
+
+    def __init__(self, author, title, content, html):
+        self.author = author
+        self.title = title
+        self.content = content
+        self.html = html
+        self.pub_date = datetime.datetime.utcnow()
+
+### ReST helpers
 
 class CodeElement(nodes.General, nodes.FixedTextElement):
     pass
@@ -89,22 +111,30 @@ class Writer(docutils.writers.html4css1.Writer):
         docutils.writers.html4css1.Writer.__init__(self)
         self.translator_class = Translator
 
-@app.route("/")
-def show_entries(tag=None):
-    if tag is not None:
-        posts = BlogPost.tagged[tag]
-    else:
-        posts = BlogPost.all()
-    page = couchdb.paginate(posts, 10, flask.request.args.get('start'))
-    return flask.render_template("show_entries.html", tag=tag, page=page)
+### Views
 
-@app.route("/<tag>")
-def show_entries_for_tag(tag):
-    return show_entries(tag)
+@app.route("/")
+def index():
+    return show_entries(1)
+
+@app.route("/<int:page>")
+def show_entries(page, tags=None):
+    query = Post.query.order_by(Post.pub_date.desc())
+    if tags is not None:
+        query = Post.query.join(Post.tags).filter(Tag.tag.in_(tags)) \
+                .group_by(Post.id) \
+                .having(func.count(Post.id) == len(tags))
+    query = query.order_by(Post.pub_date.desc())
+    page = query.paginate(page, 10, page != 1)
+    return flask.render_template("show_entries.html", page=page)
+
+@app.route("/tagged/<tags>")
+def show_entries_for_tag(tags):
+    return show_entries(1, tags.split(","))
 
 @app.route("/show/<id>")
 def show_entry(id):
-    entry = BlogPost.load(id)
+    entry = Post.query.get_or_404(id)
     return flask.render_template("show_entry.html", entry=entry)
 
 @app.route("/add")
@@ -115,21 +145,30 @@ def add_entry_form():
 def add_entry():
     form = flask.request.form
     parts = docutils.core.publish_parts(form["content"], writer=Writer())
-    post = BlogPost(title=form["title"], content=form["content"],
-                    html=parts["body"], author="Andy")
-    post.store()
-    return flask.redirect(flask.url_for('show_entries'))
+    user = User.query.filter_by(name="Andy").one()
+    post = Post(title=form["title"], content=form["content"],
+                html=parts["body"], author=user)
+    tags = [tag.strip() for tag in form["tags"].split(",")]
+    for name in tags:
+        tag = Tag.query.filter_by(tag=name).first()
+        if tag is None:
+            tag = Tag(name)
+            db.session.add(tag)
+        post.tags.append(tag)
+    db.session.add(post)
+    db.session.commit()
+    return flask.redirect(flask.url_for("index"))
 
 @app.route("/atom")
 def atom_feed():
     feed = atom.AtomFeed("choblog", feed_url=flask.request.url,
                          url=flask.request.host_url,
                          subtitle="Tired musings of a chief hacking officer.")
-    for post in itertools.islice(BlogPost.all(), 10):
+    for post in Post.query.order_by(Post.pub_date.desc()).limit(10):
         feed.add(post.title, post.html, content_type="html",
-                 author=post.author,
+                 author=post.author.name,
                  url=flask.url_for("show_entry", id=post.id), id=post.id,
-                 updated=post.published, published=post.published)
+                 updated=post.pub_date, published=post.pub_date)
     return feed.get_response()
 
 if __name__ == '__main__':
