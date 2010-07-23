@@ -1,19 +1,88 @@
-body            { font-family: sans-serif; background: #eee; }
-a, h1, h2, h3   { color: #377BA8; }
-h1, h2          { font-family: 'Georgia', serif; margin: 0; }
-h1 a            { text-decoration: none; color: inherit; }
-h2              { font-size: 1.2em; }
-h2 a            { text-decoration:none; }
-h2 a:hover      { text-decoration: underline; color: #c88457; }
-h3              { font-size: 1em;  margin: 0; }
-h3              { border-bottom: 2px solid #eee; }
+a, h1, h2, h3 {
+    color: #bb0000;
+}
 
-.page           { margin: 2em auto; width: 35em; border: 5px solid #ccc;
-                  padding: 0.8em; background: white; }
-.entries        { list-style: none; margin: 0; padding: 0; }
-.entries        { border-bottom: 2px solid #eee; }
-.entries li     { margin: 0.8em 1.2em; }
-.entries li h2  { margin-left: -1em; }
+html {
+    background: #f1f1f1;
+}
+
+body {
+    background: #ffffff;
+    box-shadow: 5px 5px 5px #ccc;
+    -webkit-box-shadow: 5px 5px 5px #ccc;
+    -moz-box-shadow: 5px 5px 5px #ccc;
+    font-family: sans-serif;
+    margin: 2em auto;
+    width: 60%;
+}
+
+.head, .page, .footer {
+    background: #fff;
+    padding: 12px;
+}
+
+.page {
+    border-bottom: 2px solid #eee;
+    margin: 12px;
+    padding: 0;
+}
+
+.head h1, h2 {
+    font-family: 'Georgia', serif;
+    letter-spacing: -.0625em;
+    margin: 0;
+}
+
+.head h1 a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.head h2 {
+    font-size: 1.25em;
+}
+
+.head h3 {
+    border-bottom: 2px solid #eee;
+    font-size: 1em;
+    margin: 0;
+    padding-bottom: .5em;
+}
+
+.footer {
+    color: #ccc;
+    font-size: .75em;
+    text-align: right;
+}
+
+.footer:hover {
+    color: #888;
+}
+
+.entries {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.entry {
+    margin: 0.8em 1em;
+}
+
+.entry h1 {
+    font-size: 1.25em;
+}
+
+.entry h2 {
+    font-size: 1.25em;
+}
+
+.entry h3 {
+    font-size: 1em;
+}
+
+
+/* OLD */
 .add-entry      { font-size: 0.9em; border-bottom: 1px solid #ccc; }
 .add-entry dl   { font-weight: bold; }
 .metanav        { text-align: right; font-size: 0.8em; padding: 0.3em;

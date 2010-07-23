@@ -2,8 +2,10 @@
 {% block body %}
   <ul class=entries>
   {% for entry in page.items %}
-    <li><h2><a href="{{ url_for('show_entry', id=entry.id) }}">{{ entry.title }}</a></h2>
-        {{ entry.html|safe }}
+      <li><h2><a href="{{ url_for('show_entry', id=entry.id) }}">{{ entry.title }}</a></h2>
+      <div class="entry">
+          {{ entry.html|safe }}
+      </div>
   {% else %}
     <li><em>Nothing to see here.</em>
   {% endfor %}
