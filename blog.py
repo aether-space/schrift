@@ -115,7 +115,6 @@ def add_entry_form():
 def add_entry():
     form = flask.request.form
     parts = docutils.core.publish_parts(form["content"], writer=Writer())
-    print parts["body"], `form["content"]`
     post = BlogPost(title=form["title"], content=form["content"],
                     html=parts["body"], author="Andy")
     post.store()
@@ -127,7 +126,6 @@ def atom_feed():
                          url=flask.request.host_url,
                          subtitle="Tired musings of a chief hacking officer.")
     for post in itertools.islice(BlogPost.all(), 10):
-        print post, vars(post)
         feed.add(post.title, post.html, content_type="html",
                  author=post.author,
                  url=flask.url_for("show_entry", id=post.id), id=post.id,
