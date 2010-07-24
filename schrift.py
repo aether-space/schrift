@@ -215,17 +215,20 @@ def logout():
     return flask.redirect(flask.url_for("index"))
 
 @app.route("/add")
-def add_entry_form():
+def add_entry_form(text="", tags=""):
     if not "user_id" in flask.session:
         flask.session["real_url"] = flask.request.url
         return flask.redirect(flask.url_for("login_form"))
-    return flask.render_template("add.html")
+    return flask.render_template("add.html", text=text, tags=tags)
 
 @app.route("/add", methods=["POST"])
 def add_entry():
     if not "user_id" in flask.session:
         flask.abort(403)
     form = flask.request.form
+    if not form["title"]:
+        flask.flash("Sorry, a title is required.")
+        return add_entry_form(form["content"], form["tags"])
     parts = docutils.core.publish_parts(form["content"], writer=Writer())
     user = User.query.get(flask.session["user_id"])
     post = Post(title=form["title"], content=form["content"],
