@@ -178,6 +178,7 @@ def show_entries_for_tag(tags):
 def show_entry(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
     if entry.private and not "user_id" in flask.session:
+        flask.session["real_url"] = flask.request.url
         return flask.redirect(flask.url_for("login"))
     return flask.render_template("show_entry.html", entry=entry)
 
@@ -193,7 +194,7 @@ def login():
         flask.abort(403)
     flask.flash("You have been logged in.")
     flask.session["user_id"] = user.id
-    return flask.redirect(flask.url_for("index"))
+    return flask.redirect(flask.session.pop("real_url", flask.url_for("index")))
 
 @app.route("/logout")
 def logout():
@@ -204,6 +205,7 @@ def logout():
 @app.route("/add")
 def add_entry_form():
     if not "user_id" in flask.session:
+        flask.session["real_url"] = flask.request.url
         return flask.redirect(flask.url_for("login_form"))
     return flask.render_template("add.html")
 
