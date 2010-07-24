@@ -1,5 +1,4 @@
 import datetime
-import hashlib
 import re
 import unicodedata
 
@@ -8,6 +7,7 @@ import docutils.writers.html4css1
 import flask
 import pygments
 import pygments.lexers, pygments.formatters
+import werkzeug
 from docutils import nodes
 from docutils.parsers import rst
 from flaskext import sqlalchemy
@@ -33,10 +33,16 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    password = db.Column(db.String(40))
+    password = db.Column(db.String(80))
 
     def __init__(self, name):
         self.name = name
+
+    def set_password(self, password):
+        self.password = werkzeug.generate_password_hash(password)
+
+    def check_password(self, password):
+        return werkzeug.check_password_hash(self.password, password)
 
     def __repr__(self):
         return "<User '%s'>" % (self.name, )
@@ -163,9 +169,8 @@ def login_form():
 @app.route("/login", methods=["POST"])
 def login():
     form = flask.request.form
-    password = hashlib.sha1(form["password"]).hexdigest()
-    user = User.query.filter_by(name=form["name"], password=password).first()
-    if user is None:
+    user = User.query.filter_by(name=form["name"]).first()
+    if user is None or not user.check_password(form["password"]):
         flask.abort(403)
     flask.flash("You have been logged in.")
     flask.session["user_id"] = user.id
