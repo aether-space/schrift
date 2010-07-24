@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import re
 import unicodedata
 
@@ -32,6 +33,7 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
+    password = db.Column(db.String(40))
 
     def __init__(self, name):
         self.name = name
@@ -154,15 +156,40 @@ def show_entry(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
     return flask.render_template("show_entry.html", entry=entry)
 
+@app.route("/login")
+def login_form():
+    return flask.render_template("login.html")
+
+@app.route("/login", methods=["POST"])
+def login():
+    form = flask.request.form
+    password = hashlib.sha1(form["password"]).hexdigest()
+    user = User.query.filter_by(name=form["name"], password=password).first()
+    if user is None:
+        flask.abort(403)
+    flask.flash("You have been logged in.")
+    flask.session["user_id"] = user.id
+    return flask.redirect(flask.url_for("index"))
+
+@app.route("/logout")
+def logout():
+    flask.session.pop("user_id", None)
+    flask.flash("You have been logged out.")
+    return flask.redirect(flask.url_for("index"))
+
 @app.route("/add")
 def add_entry_form():
+    if not "user_id" in flask.session:
+        return flask.redirect(flask.url_for("login_form"))
     return flask.render_template("add.html")
 
 @app.route("/add", methods=["POST"])
 def add_entry():
+    if not "user_id" in flask.session:
+        flask.abort(403)
     form = flask.request.form
     parts = docutils.core.publish_parts(form["content"], writer=Writer())
-    user = User.query.filter_by(name="Andy").one()
+    user = User.query.get(flask.session["user_id"])
     post = Post(title=form["title"], content=form["content"],
                 html=parts["body"], author=user)
     tags = [tag.strip() for tag in form["tags"].split(",")]
