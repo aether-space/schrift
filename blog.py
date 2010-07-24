@@ -18,6 +18,9 @@ SECRET_KEY = "XI5auBoeiH2TErtf8Hfi"
 SQLALCHEMY_DATABASE_URI = "sqlite:///blog.db"
 SQLALCHEMY_ECHO = True
 
+BLOG_TITLE = "choblog"
+BLOG_SUBTITLE = "Tired musings of a chief hacking officer."
+
 app = flask.Flask(__name__)
 app.config.from_object(__name__)
 db = sqlalchemy.SQLAlchemy(app)
@@ -170,9 +173,9 @@ def add_entry():
 
 @app.route("/atom")
 def atom_feed():
-    feed = atom.AtomFeed("choblog", feed_url=flask.request.url,
+    feed = atom.AtomFeed(BLOG_TITLE, feed_url=flask.request.url,
                          url=flask.request.host_url,
-                         subtitle="Tired musings of a chief hacking officer.")
+                         subtitle=BLOG_SUBTITLE)
     for post in Post.query.order_by(Post.pub_date.desc()).limit(10):
         feed.add(post.title, post.html, content_type="html",
                  author=post.author.name,
