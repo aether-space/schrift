@@ -1,35 +1,33 @@
 a, h1, h2, h3 {
-    color: #5C85FF;
+    color: #1f3347;
 }
 
 html {
-    background: #f1f1f1;
+    /*background: #354f68;*/
+    background: #c6d3dc;
 }
 
 body {
-    background: #ffffff;
-    box-shadow: 5px 5px 5px #ccc;
-    -webkit-box-shadow: 5px 5px 5px #ccc;
-    -moz-box-shadow: 5px 5px 5px #ccc;
+    background: #fff;
+    box-shadow: 0px 5px 15px #14293c;
+    -webkit-box-shadow: 0px 5px 15px #14293c;
+    -moz-box-shadow: 0px 5px 5px #14293c;
     font-family: sans-serif;
     margin: 2em auto;
-    min-width: 600px;
-    width: 60%;
+    width: 600px;
 }
 
 .head, .page, .footer {
-    background: #fff;
     padding: 12px;
 }
 
 .page {
-    border-bottom: 2px solid #eee;
     margin: 12px;
     padding: 0;
 }
 
 .head h1, h2 {
-    font-family: 'Georgia', serif;
+    font-family: 'Arial', sans-serif;
     letter-spacing: -.0625em;
     margin: 0;
 }
@@ -51,8 +49,10 @@ body {
 }
 
 .footer {
+    border-top: 2px solid #eee;
     color: #ccc;
     font-size: .75em;
+    margin: 12px;
     text-align: right;
 }
 
@@ -93,6 +93,7 @@ body {
 
 .entry p {
     color: #333;
+    font-family: "Georgia", serif;
     line-height: 1.25em;
 }
 
@@ -101,6 +102,14 @@ body {
     margin: 1em 0;
     padding: .5em;
     overflow: auto;
+}
+
+.extra {
+    color: #888;
+    font-family: "Georgia", serif;
+    font-size: .75em;
+    line-height: 1.25em;
+    text-align: center;
 }
 
 /* OLD */

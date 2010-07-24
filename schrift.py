@@ -122,6 +122,12 @@ def slugify(value):
     value = re.sub(r'[^\w\s-]', '', value).strip().lower()
     return re.sub(r'[-\s]+', '-', value)
 
+### Template filters
+def datetimeformat(value, format='%H:%M / %d-%m-%Y'):
+    return value.strftime(format)
+
+app.jinja_env.filters['datetimeformat'] = datetimeformat
+
 ### Views
 
 @app.route("/")
