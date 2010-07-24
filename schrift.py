@@ -1,3 +1,4 @@
+# coding: utf-8
 import datetime
 import re
 import unicodedata
@@ -136,8 +137,10 @@ class Writer(docutils.writers.html4css1.Writer):
 ### Helpers
 
 def slugify(value):
-    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore")
-    value = re.sub(r'[^\w\s-]', '', value).strip().lower()
+    value = unicodedata.normalize("NFKD", value)
+    value = value.translate({0x308: u"e", ord(u"ß"): u"ss"})
+    value = value.encode("ascii", "ignore").lower()
+    value = re.sub(r'[^[a-z]\s-]', '', value).strip()
     return re.sub(r'[-\s]+', '-', value)
 
 ### Template filters
