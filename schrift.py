@@ -227,7 +227,7 @@ def atom_feed():
     for post in Post.query.order_by(Post.pub_date.desc()).limit(10):
         feed.add(post.title, post.html, content_type="html",
                  author=post.author.name,
-                 url=flask.url_for("show_entry", id=post.id), id=post.id,
+                 url=flask.url_for("show_entry", slug=post.slug), id=post.id,
                  updated=post.pub_date, published=post.pub_date)
     return feed.get_response()
 
