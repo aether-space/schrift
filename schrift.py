@@ -176,7 +176,7 @@ def add_entry():
 
 @app.route("/atom")
 def atom_feed():
-    feed = atom.AtomFeed("choblog", feed_url=flask.request.url,
+    feed = atom.AtomFeed("schrift", feed_url=flask.request.url,
                          url=flask.request.host_url,
                          subtitle="Tired musings of a chief hacking officer.")
     for post in Post.query.order_by(Post.pub_date.desc()).limit(10):
