@@ -9,6 +9,7 @@ class SchriftTest(unittest.TestCase):
         self.assertEqual(schrift.slugify(u"ßpäm"), u"sspaem")
         self.assertEqual(schrift.slugify(u"slug With spaces"),
                          u"slug-with-spaces")
+        self.assertEqual(schrift.slugify(u"foo@bar"), u"foobar")
 
 if __name__ == "__main__":
     unittest.main()

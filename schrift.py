@@ -18,7 +18,7 @@ from werkzeug.contrib import atom
 DEBUG = True
 SECRET_KEY = "XI5auBoeiH2TErtf8Hfi"
 SQLALCHEMY_DATABASE_URI = "sqlite:///blog.db"
-SQLALCHEMY_ECHO = True
+#SQLALCHEMY_ECHO = True
 
 BLOG_TITLE = "choblog"
 BLOG_SUBTITLE = "Tired musings of a chief hacking officer."
@@ -140,7 +140,7 @@ def slugify(value):
     value = unicodedata.normalize("NFKD", value)
     value = value.translate({0x308: u"e", ord(u"ß"): u"ss"})
     value = value.encode("ascii", "ignore").lower()
-    value = re.sub(r'[^[a-z]\s-]', '', value).strip()
+    value = re.sub(r'[^a-z\s-]', '', value).strip()
     return re.sub(r'[-\s]+', '-', value)
 
 ### Template filters
