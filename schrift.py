@@ -174,6 +174,17 @@ def show_entries(page, tags=None):
 def show_entries_for_tag(tags):
     return show_entries(1, tags.split(","))
 
+@app.route("/delete/<slug>")
+def delete_entry(slug):
+    if not "user_id" in flask.session:
+        flask.session["real_url"] = flask.request.url
+        return flask.redirect(flask.url_for("login"))
+    entry = Post.query.filter_by(slug=slug).first_or_404()
+    flask.flash('Post "%s" deleted.' % (entry.title, ))
+    db.session.delete(entry)
+    db.session.commit()
+    return flask.redirect(flask.url_for("index"))
+
 @app.route("/show/<slug>")
 def show_entry(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
