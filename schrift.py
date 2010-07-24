@@ -84,6 +84,16 @@ class Post(db.Model):
         self.html = html
         self.pub_date = datetime.datetime.utcnow()
 
+    @werkzeug.cached_property
+    def next(self):
+        return self.query.filter(Post.pub_date > self.pub_date) \
+                         .order_by(Post.pub_date).first()
+
+    @werkzeug.cached_property
+    def prev(self):
+        return self.query.filter(Post.pub_date < self.pub_date) \
+                         .order_by(Post.pub_date.desc()).first()
+
 ### ReST helpers
 
 class CodeElement(nodes.General, nodes.FixedTextElement):
