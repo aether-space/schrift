@@ -1,3 +1,4 @@
+# coding: utf-8
 import datetime
 import re
 import unicodedata
@@ -7,6 +8,7 @@ import docutils.writers.html4css1
 import flask
 import pygments
 import pygments.lexers, pygments.formatters
+import werkzeug
 from docutils import nodes
 from docutils.parsers import rst
 from flaskext import sqlalchemy
@@ -16,7 +18,10 @@ from werkzeug.contrib import atom
 DEBUG = True
 SECRET_KEY = "XI5auBoeiH2TErtf8Hfi"
 SQLALCHEMY_DATABASE_URI = "sqlite:///blog.db"
-SQLALCHEMY_ECHO = True
+#SQLALCHEMY_ECHO = True
+
+BLOG_TITLE = "choblog"
+BLOG_SUBTITLE = "Tired musings of a chief hacking officer."
 
 app = flask.Flask(__name__)
 app.config.from_object(__name__)
@@ -29,9 +34,16 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
+    password = db.Column(db.String(80))
 
     def __init__(self, name):
         self.name = name
+
+    def set_password(self, password):
+        self.password = werkzeug.generate_password_hash(password)
+
+    def check_password(self, password):
+        return werkzeug.check_password_hash(self.password, password)
 
     def __repr__(self):
         return "<User '%s'>" % (self.name, )
@@ -72,6 +84,16 @@ class Post(db.Model):
         self.content = content
         self.html = html
         self.pub_date = datetime.datetime.utcnow()
+
+    @werkzeug.cached_property
+    def next(self):
+        return self.query.filter(Post.pub_date > self.pub_date) \
+                         .order_by(Post.pub_date).first()
+
+    @werkzeug.cached_property
+    def prev(self):
+        return self.query.filter(Post.pub_date < self.pub_date) \
+                         .order_by(Post.pub_date.desc()).first()
 
 ### ReST helpers
 
@@ -115,8 +137,10 @@ class Writer(docutils.writers.html4css1.Writer):
 ### Helpers
 
 def slugify(value):
-    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore")
-    value = re.sub(r'[^\w\s-]', '', value).strip().lower()
+    value = unicodedata.normalize("NFKD", value)
+    value = value.translate({0x308: u"e", ord(u"ß"): u"ss"})
+    value = value.encode("ascii", "ignore").lower()
+    value = re.sub(r'[^a-z\s-]', '', value).strip()
     return re.sub(r'[-\s]+', '-', value)
 
 ### Template filters
@@ -151,15 +175,39 @@ def show_entry(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
     return flask.render_template("show_entry.html", entry=entry)
 
+@app.route("/login")
+def login_form():
+    return flask.render_template("login.html")
+
+@app.route("/login", methods=["POST"])
+def login():
+    form = flask.request.form
+    user = User.query.filter_by(name=form["name"]).first()
+    if user is None or not user.check_password(form["password"]):
+        flask.abort(403)
+    flask.flash("You have been logged in.")
+    flask.session["user_id"] = user.id
+    return flask.redirect(flask.url_for("index"))
+
+@app.route("/logout")
+def logout():
+    flask.session.pop("user_id", None)
+    flask.flash("You have been logged out.")
+    return flask.redirect(flask.url_for("index"))
+
 @app.route("/add")
 def add_entry_form():
+    if not "user_id" in flask.session:
+        return flask.redirect(flask.url_for("login_form"))
     return flask.render_template("add.html")
 
 @app.route("/add", methods=["POST"])
 def add_entry():
+    if not "user_id" in flask.session:
+        flask.abort(403)
     form = flask.request.form
     parts = docutils.core.publish_parts(form["content"], writer=Writer())
-    user = User.query.filter_by(name="Andy").one()
+    user = User.query.get(flask.session["user_id"])
     post = Post(title=form["title"], content=form["content"],
                 html=parts["body"], author=user)
     tags = [tag.strip() for tag in form["tags"].split(",")]
@@ -176,13 +224,13 @@ def add_entry():
 
 @app.route("/atom")
 def atom_feed():
-    feed = atom.AtomFeed("schrift", feed_url=flask.request.url,
+    feed = atom.AtomFeed(BLOG_TITLE, feed_url=flask.request.url,
                          url=flask.request.host_url,
-                         subtitle="Tired musings of a chief hacking officer.")
+                         subtitle=BLOG_SUBTITLE)
     for post in Post.query.order_by(Post.pub_date.desc()).limit(10):
         feed.add(post.title, post.html, content_type="html",
                  author=post.author.name,
-                 url=flask.url_for("show_entry", id=post.id), id=post.id,
+                 url=flask.url_for("show_entry", slug=post.slug), id=post.id,
                  updated=post.pub_date, published=post.pub_date)
     return feed.get_response()
 
