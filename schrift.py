@@ -202,7 +202,8 @@ def login():
     form = flask.request.form
     user = User.query.filter_by(name=form["name"]).first()
     if user is None or not user.check_password(form["password"]):
-        flask.abort(403)
+        flask.flash("Sorry, try again.")
+        return flask.redirect(flask.url_for("login"))
     flask.flash("You have been logged in.")
     flask.session["user_id"] = user.id
     return flask.redirect(flask.session.pop("real_url", flask.url_for("index")))
