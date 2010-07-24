@@ -74,15 +74,17 @@ class Post(db.Model):
     slug = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text)
     html = db.Column(db.Text)
+    private = db.Column(db.Boolean)
     pub_date = db.Column(db.DateTime)
     tags = sqlalchemy.orm.relationship("Tag", secondary=post_tags,
                                        backref="posts")
 
-    def __init__(self, author, title, content, html):
+    def __init__(self, author, title, content, html, private=False):
         self.author = author
         self.title = title
         self.content = content
         self.html = html
+        self.private = private
         self.pub_date = datetime.datetime.utcnow()
 
     @werkzeug.cached_property
@@ -162,6 +164,8 @@ def show_entries(page, tags=None):
         query = Post.query.join(Post.tags).filter(Tag.tag.in_(tags)) \
                 .group_by(Post.id) \
                 .having(func.count(Post.id) == len(tags))
+    if not "user_id" in flask.session:
+        query = query.filter(Post.private != True)
     query = query.order_by(Post.pub_date.desc())
     page = query.paginate(page, 10, page != 1)
     return flask.render_template("show_entries.html", page=page)
@@ -173,6 +177,8 @@ def show_entries_for_tag(tags):
 @app.route("/show/<slug>")
 def show_entry(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
+    if entry.private and not "user_id" in flask.session:
+        return flask.redirect(flask.url_for("login"))
     return flask.render_template("show_entry.html", entry=entry)
 
 @app.route("/login")
@@ -227,7 +233,10 @@ def atom_feed():
     feed = atom.AtomFeed(BLOG_TITLE, feed_url=flask.request.url,
                          url=flask.request.host_url,
                          subtitle=BLOG_SUBTITLE)
-    for post in Post.query.order_by(Post.pub_date.desc()).limit(10):
+    query = Post.query.order_by(Post.pub_date.desc())
+    if not "user_id" in flask.session:
+        query = query.filter(Post.private != True)
+    for post in query.limit(10):
         feed.add(post.title, post.html, content_type="html",
                  author=post.author.name,
                  url=flask.url_for("show_entry", slug=post.slug), id=post.id,
