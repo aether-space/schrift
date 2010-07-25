@@ -207,7 +207,7 @@ def delete_entry(slug):
     db.session.commit()
     return flask.redirect(flask.url_for("index"))
 
-@app.route("/show/<slug>")
+@app.route("/read/<slug>")
 def show_entry(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
     if entry.private and not "user_id" in flask.session:
