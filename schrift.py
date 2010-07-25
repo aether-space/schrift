@@ -74,15 +74,17 @@ class Post(db.Model):
     slug = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text)
     html = db.Column(db.Text)
+    private = db.Column(db.Boolean)
     pub_date = db.Column(db.DateTime)
     tags = sqlalchemy.orm.relationship("Tag", secondary=post_tags,
                                        backref="posts")
 
-    def __init__(self, author, title, content, html):
+    def __init__(self, author, title, content, html, private=False):
         self.author = author
         self.title = title
         self.content = content
         self.html = html
+        self.private = private
         self.pub_date = datetime.datetime.utcnow()
 
     @werkzeug.cached_property
@@ -162,6 +164,8 @@ def show_entries(page, tags=None):
         query = Post.query.join(Post.tags).filter(Tag.tag.in_(tags)) \
                 .group_by(Post.id) \
                 .having(func.count(Post.id) == len(tags))
+    if not "user_id" in flask.session:
+        query = query.filter(Post.private != True)
     query = query.order_by(Post.pub_date.desc())
     page = query.paginate(page, 10, page != 1)
     return flask.render_template("show_entries.html", page=page)
@@ -170,9 +174,23 @@ def show_entries(page, tags=None):
 def show_entries_for_tag(tags):
     return show_entries(1, tags.split(","))
 
+@app.route("/delete/<slug>")
+def delete_entry(slug):
+    if not "user_id" in flask.session:
+        flask.session["real_url"] = flask.request.url
+        return flask.redirect(flask.url_for("login"))
+    entry = Post.query.filter_by(slug=slug).first_or_404()
+    flask.flash('Post "%s" deleted.' % (entry.title, ))
+    db.session.delete(entry)
+    db.session.commit()
+    return flask.redirect(flask.url_for("index"))
+
 @app.route("/show/<slug>")
 def show_entry(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
+    if entry.private and not "user_id" in flask.session:
+        flask.session["real_url"] = flask.request.url
+        return flask.redirect(flask.url_for("login"))
     return flask.render_template("show_entry.html", entry=entry)
 
 @app.route("/login")
@@ -184,10 +202,11 @@ def login():
     form = flask.request.form
     user = User.query.filter_by(name=form["name"]).first()
     if user is None or not user.check_password(form["password"]):
-        flask.abort(403)
+        flask.flash("Sorry, try again.")
+        return flask.redirect(flask.url_for("login"))
     flask.flash("You have been logged in.")
     flask.session["user_id"] = user.id
-    return flask.redirect(flask.url_for("index"))
+    return flask.redirect(flask.session.pop("real_url", flask.url_for("index")))
 
 @app.route("/logout")
 def logout():
@@ -196,16 +215,20 @@ def logout():
     return flask.redirect(flask.url_for("index"))
 
 @app.route("/add")
-def add_entry_form():
+def add_entry_form(text="", tags=""):
     if not "user_id" in flask.session:
+        flask.session["real_url"] = flask.request.url
         return flask.redirect(flask.url_for("login_form"))
-    return flask.render_template("add.html")
+    return flask.render_template("add.html", text=text, tags=tags)
 
 @app.route("/add", methods=["POST"])
 def add_entry():
     if not "user_id" in flask.session:
         flask.abort(403)
     form = flask.request.form
+    if not form["title"]:
+        flask.flash("Sorry, a title is required.")
+        return add_entry_form(form["content"], form["tags"])
     parts = docutils.core.publish_parts(form["content"], writer=Writer())
     user = User.query.get(flask.session["user_id"])
     post = Post(title=form["title"], content=form["content"],
@@ -227,7 +250,10 @@ def atom_feed():
     feed = atom.AtomFeed(BLOG_TITLE, feed_url=flask.request.url,
                          url=flask.request.host_url,
                          subtitle=BLOG_SUBTITLE)
-    for post in Post.query.order_by(Post.pub_date.desc()).limit(10):
+    query = Post.query.order_by(Post.pub_date.desc())
+    if not "user_id" in flask.session:
+        query = query.filter(Post.private != True)
+    for post in query.limit(10):
         feed.add(post.title, post.html, content_type="html",
                  author=post.author.name,
                  url=flask.url_for("show_entry", slug=post.slug), id=post.id,

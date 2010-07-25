@@ -5,9 +5,9 @@
         <dt>Title:
         <dd><input type=text size=30 name=title>
         <dt>Text:
-        <dd><textarea name=content rows=5 cols=40></textarea>
+        <dd><textarea name=content rows=5 cols=40>{{ text }}</textarea>
         <dt>Tags:
-        <dd><input type=text size=30 name=tags>
+        <dd><input type=text size=30 name=tags value="{{ tags }}">
         <dd><input type=submit value=Share>
       </dl>
   </form>
