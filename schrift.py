@@ -305,7 +305,7 @@ def add_entry():
     parts = docutils.core.publish_parts(form["content"], writer=Writer())
     user = User.query.get(flask.session["user_id"])
     post = Post(title=form["title"], content=form["content"],
-                html=parts["body"], author=user)
+                html=parts["body"], private=("private" in form), author=user)
     post.tags = get_tags(form["tags"])
     post.slug = slugify(form["title"])
     db.session.add(post)
@@ -330,6 +330,7 @@ def save_entry():
         flask.abort(404)
     entry.content = form["content"]
     entry.tags = get_tags(form["tags"])
+    entry.private = "private" in form
     if not form["title"]:
         flask.flash("Sorry, but a title is required.")
         return flask.render_template("edit.html", entry=entry)
