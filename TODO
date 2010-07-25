@@ -1,3 +1,7 @@
 - Style archive pages
+- Style login form
+- Style add an article form
+- Add edit/delete links to posts when logged in
+- Add a checkbox to the add-a-post page to signify private post
 - Style pagination
 - Style flash messages
