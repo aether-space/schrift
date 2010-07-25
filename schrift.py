@@ -228,11 +228,13 @@ def login():
         return flask.redirect(flask.url_for("login"))
     flask.flash("You have been logged in.")
     flask.session["user_id"] = user.id
+    flask.session["user_name"] = user.name
     return flask.redirect(flask.session.pop("real_url", flask.url_for("index")))
 
 @app.route("/logout")
 def logout():
     flask.session.pop("user_id", None)
+    flask.session.pop("user_name", None)
     flask.flash("You have been logged out.")
     return flask.redirect(flask.url_for("index"))
 

@@ -11,19 +11,23 @@
           <h3>Tired musings of a chief hacking officer.</h3>
         </div>
         <div class=page>
-          {#<div class=metanav>
-          {% if not session.logged_in %}
-            <a href="{{ url_for('login') }}">log in</a>
-          {% else %}
-            <a href="{{ url_for('logout') }}">log out</a>
-          {% endif %}
-          </div>#}
+          <div class=metanav>
+         </div>
           {% for message in get_flashed_messages() %}
             <div class=flash>{{ message }}</div>
           {% endfor %}
           {% block body %}{% endblock %}
         </div>
         <p class="footer">
+            {% if not session.user_id %}
+              <a href="{{ url_for('login') }}">Log in</a>.
+              <br><br>
+            {% else %}
+              <span>Logged in as {{ session.user_name }}.</span>
+              <a href="{{ url_for('logout') }}">Log out</a>.
+              <a href="{{ url_for('add_entry_form') }}">Add a new post</a>.
+              <br><br>
+            {% endif %}
             Running on <em>schrift</em>.
         </p>
     </body>
