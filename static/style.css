@@ -3,7 +3,6 @@ a, h1, h2, h3 {
 }
 
 html {
-    /*background: #354f68;*/
     background: #c6d3dc;
 }
 
@@ -22,7 +21,7 @@ body {
 }
 
 .page {
-    margin: 12px;
+    margin: 12px 18px;
     padding: 0;
 }
 
