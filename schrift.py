@@ -96,13 +96,17 @@ class Post(db.Model):
 
     @werkzeug.cached_property
     def next(self):
-        return self.query.filter(Post.pub_date > self.pub_date) \
-                         .order_by(Post.pub_date).first()
+        query = self.query.filter(Post.pub_date > self.pub_date)
+        if not "user_id" in flask.session:
+            query = query.filter(Post.private != True)
+        return query.order_by(Post.pub_date).first()
 
     @werkzeug.cached_property
     def prev(self):
-        return self.query.filter(Post.pub_date < self.pub_date) \
-                         .order_by(Post.pub_date.desc()).first()
+        query = self.query.filter(Post.pub_date < self.pub_date)
+        if not "user_id" in flask.session:
+            query = query.filter(Post.private != True)
+        return query.order_by(Post.pub_date.desc()).first()
 
 ### ReST helpers
 
