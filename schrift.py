@@ -1,5 +1,6 @@
 # coding: utf-8
 import datetime
+import functools
 import re
 import unicodedata
 
@@ -95,13 +96,17 @@ class Post(db.Model):
 
     @werkzeug.cached_property
     def next(self):
-        return self.query.filter(Post.pub_date > self.pub_date) \
-                         .order_by(Post.pub_date).first()
+        query = self.query.filter(Post.pub_date > self.pub_date)
+        if not "user_id" in flask.session:
+            query = query.filter(Post.private != True)
+        return query.order_by(Post.pub_date).first()
 
     @werkzeug.cached_property
     def prev(self):
-        return self.query.filter(Post.pub_date < self.pub_date) \
-                         .order_by(Post.pub_date.desc()).first()
+        query = self.query.filter(Post.pub_date < self.pub_date)
+        if not "user_id" in flask.session:
+            query = query.filter(Post.private != True)
+        return query.order_by(Post.pub_date.desc()).first()
 
 ### ReST helpers
 
@@ -151,14 +156,24 @@ def get_tags(string):
     name, a new one will be crated and added to the database session.
     """
     tags = list()
-    for name in string.split(","):
-        name = name.strip()
+    names = set(name.strip() for name in string.split(","))
+    for name in names:
         tag = Tag.query.filter_by(tag=name).first()
         if tag is None:
             tag = Tag(name)
             db.session.add(tag)
         tags.append(tag)
     return tags
+
+def requires_login(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        print "called", "user_id" in flask.session
+        if not "user_id" in flask.session:
+            flask.session["real_url"] = flask.request.url
+            return flask.redirect(flask.url_for("login"))
+        return func(*args, **kwargs)
+    return wrapper
 
 def slugify(value):
     value = unicodedata.normalize("NFKD", value)
@@ -217,17 +232,15 @@ def show_entries_for_tag(tags):
     return show_entries(1, tags.split(","))
 
 @app.route("/delete/<slug>")
+@requires_login
 def delete_entry(slug):
-    if not "user_id" in flask.session:
-        flask.session["real_url"] = flask.request.url
-        return flask.redirect(flask.url_for("login"))
     entry = Post.query.filter_by(slug=slug).first_or_404()
     flask.flash('Post "%s" deleted.' % (entry.title, ))
     db.session.delete(entry)
     db.session.commit()
     return flask.redirect(flask.url_for("index"))
 
-@app.route("/show/<slug>")
+@app.route("/read/<slug>")
 def show_entry(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
     if entry.private and not "user_id" in flask.session:
@@ -259,10 +272,8 @@ def logout():
     return flask.redirect(flask.url_for("index"))
 
 @app.route("/add")
+@requires_login
 def add_entry_form(text="", tags=""):
-    if not "user_id" in flask.session:
-        flask.session["real_url"] = flask.request.url
-        return flask.redirect(flask.url_for("login_form"))
     return flask.render_template("add.html", text=text, tags=tags)
 
 @app.route("/add", methods=["POST"])
@@ -284,10 +295,8 @@ def add_entry():
     return flask.redirect(flask.url_for("index"))
 
 @app.route("/edit/<slug>")
+@requires_login
 def edit_entry_form(slug):
-    if not "user_id" in flask.session:
-        session.request["real_url"] = flask.request.url
-        return flask.redirect(flask.url_for("login"))
     entry = Post.query.filter_by(slug=slug).first_or_404()
     return flask.render_template("edit.html", entry=entry)
 
