@@ -173,6 +173,9 @@ def datetimeformat(value, format='%H:%M / %d-%m-%Y'):
 
 app.jinja_env.filters['datetimeformat'] = datetimeformat
 
+app.jinja_env.globals['BLOG_TITLE'] = BLOG_TITLE
+app.jinja_env.globals['BLOG_SUBTITLE'] = BLOG_SUBTITLE
+
 ### Views
 
 @app.route("/")
@@ -191,6 +194,23 @@ def show_entries(page, tags=None):
     query = query.order_by(Post.pub_date.desc())
     page = query.paginate(page, 10, page != 1)
     return flask.render_template("show_entries.html", page=page)
+
+@app.route("/archive")
+def show_archive():
+    return show_archive_page(1)
+
+@app.route("/archive/<int:page>")
+def show_archive_page(page, tags=None):
+    query = Post.query.order_by(Post.pub_date.desc())
+    if tags is not None:
+        query = Post.query.join(Post.tags).filter(Tag.tag.in_(tags)) \
+                .group_by(Post.id) \
+                .having(func.count(Post.id) == len(tags))
+    if not "user_id" in flask.session:
+        query = query.filter(Post.private != True)
+    query = query.order_by(Post.pub_date.desc())
+    page = query.paginate(page, 10, page != 1)
+    return flask.render_template("show_archive.html", page=page)
 
 @app.route("/tagged/<tags>")
 def show_entries_for_tag(tags):

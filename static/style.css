@@ -115,12 +115,30 @@ body {
     text-align: center;
 }
 
-.metanav { 
-    background: #c6d3dc;
-    text-align: right; 
-    font-size: 0.8em; 
-    padding: .3em .5em;
-    margin-bottom: 1em; 
+.nav {
+    margin: 0 0 1em 0;
+    padding: 0 18px;
+}
+
+.nav li {
+    background: #c1d3de;
+    display: inline;
+    margin-right: .5em;
+    padding: .25em .3em;
+}
+
+.nav li a {
+    text-decoration: none;
+}
+
+.nav li:hover,
+.nav li.active {
+    background: #1f3347;
+}
+
+.nav li:hover a,
+.nav li.active a {
+    color: #fff;
 }
 
 /* OLD */
