@@ -36,9 +36,12 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     password = db.Column(db.String(80))
+    editor = db.Column(db.Boolean)
 
-    def __init__(self, name):
+    def __init__(self, name, password, editor=False):
         self.name = name
+        self.editor = editor
+        self.set_password(password)
 
     def set_password(self, password):
         self.password = werkzeug.generate_password_hash(password)
@@ -47,6 +50,8 @@ class User(db.Model):
         return werkzeug.check_password_hash(self.password, password)
 
     def __repr__(self):
+        if self.editor:
+            return "<User '%s' (editor)>" % (self.name, )
         return "<User '%s'>" % (self.name, )
 
 class Tag(db.Model):
@@ -172,10 +177,20 @@ def get_tags(string):
 def requires_login(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        print "called", "user_id" in flask.session
         if not "user_id" in flask.session:
+            flask.flash("Sorry, you are not allowed to that. "
+                        "Please log in first.")
             flask.session["real_url"] = flask.request.url
             return flask.redirect(flask.url_for("login"))
+        return func(*args, **kwargs)
+    return wrapper
+
+def requires_editor(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if not flask.session["is_editor"]:
+            flask.flash("Sorry, you have to be an editor to do this.")
+            return flask.redirect(flask.url_for("index"))
         return func(*args, **kwargs)
     return wrapper
 
@@ -266,23 +281,26 @@ def login():
     flask.flash("You have been logged in.")
     flask.session["user_id"] = user.id
     flask.session["user_name"] = user.name
+    flask.session["is_editor"] = user.editor
     return flask.redirect(flask.session.pop("real_url", flask.url_for("index")))
 
 @app.route("/logout")
 def logout():
     flask.session.pop("user_id", None)
     flask.session.pop("user_name", None)
+    flask.session.pop("is_editor", None)
     flask.flash("You have been logged out.")
     return flask.redirect(flask.url_for("index"))
 
 @app.route("/add")
 @requires_login
+@requires_editor
 def add_entry_form(text="", tags=""):
     return flask.render_template("add.html", text=text, tags=tags)
 
 @app.route("/add", methods=["POST"])
 def add_entry():
-    if not "user_id" in flask.session:
+    if not "user_id" in flask.session or not flask.session["is_editor"]:
         flask.abort(403)
     form = flask.request.form
     if not form["title"]:
@@ -294,7 +312,7 @@ def add_entry():
     user = User.query.get(flask.session["user_id"])
     post = Post(title=form["title"], summary=form["summary"],
                 summary_html=summary_parts["body"], content=form["content"],
-                html=parts["body"], author=user)
+                html=parts["body"], author=user, private=("private" in form))
     post.tags = get_tags(form["tags"])
     post.slug = slugify(form["title"])
     db.session.add(post)
@@ -303,13 +321,14 @@ def add_entry():
 
 @app.route("/edit/<slug>")
 @requires_login
+@requires_editor
 def edit_entry_form(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
     return flask.render_template("edit.html", entry=entry)
 
 @app.route("/save", methods=["POST"])
 def save_entry():
-    if not "user_id" in flask.session:
+    if not "user_id" in flask.session or not flask.session["is_editor"]:
         flask.abort(403)
     form = flask.request.form
     try:
@@ -318,6 +337,7 @@ def save_entry():
         flask.abort(404)
     entry.content = form["content"]
     entry.tags = get_tags(form["tags"])
+    entry.private = "private" in form
     if not form["title"]:
         flask.flash("Sorry, but a title is required.")
         return flask.render_template("edit.html", entry=entry)
