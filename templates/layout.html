@@ -10,15 +10,15 @@
           <h1><a href="{{ url_for("index") }}">{{ BLOG_TITLE }}</a></h1>
           <h3>{{ BLOG_SUBTITLE }}</h3>
         </div>
+        {% for message in get_flashed_messages() %}
+          <div class=flash>{{ message }}</div>
+        {% endfor %}
         <ul class="nav">
           <li><a href="{{ url_for('index') }}">Index</a>,</li>
           <li><a href="{{ url_for('show_archive') }}">Archive</a></li>
         </ul>
         <div class=page>
-          {% for message in get_flashed_messages() %}
-            <div class=flash>{{ message }}</div>
-          {% endfor %}
-          {% block body %}{% endblock %}
+            {% block body %}{% endblock %}
         </div>
         <p class="footer">
             {% if not session.user_id %}
