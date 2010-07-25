@@ -79,6 +79,8 @@ class Post(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     title = db.Column(db.String(255), nullable=False)
     slug = db.Column(db.String(255), nullable=False)
+    summary = db.Column(db.Text)
+    summary_html = db.Column(db.Text)
     content = db.Column(db.Text)
     html = db.Column(db.Text)
     private = db.Column(db.Boolean)
@@ -86,9 +88,11 @@ class Post(db.Model):
     tags = sqlalchemy.orm.relationship("Tag", secondary=post_tags,
                                        backref="posts")
 
-    def __init__(self, author, title, content, html, private=False):
+    def __init__(self, author, title, summary, summary_html, content, html, private=False):
         self.author = author
         self.title = title
+        self.summary = summary
+        self.summary_html = summary_html
         self.content = content
         self.html = html
         self.private = private
@@ -284,9 +288,12 @@ def add_entry():
     if not form["title"]:
         flask.flash("Sorry, a title is required.")
         return add_entry_form(form["content"], form["tags"])
+    summary_parts = docutils.core.publish_parts(form["summary"], 
+                                                writer=Writer())
     parts = docutils.core.publish_parts(form["content"], writer=Writer())
     user = User.query.get(flask.session["user_id"])
-    post = Post(title=form["title"], content=form["content"],
+    post = Post(title=form["title"], summary=form["summary"],
+                summary_html=summary_parts["body"], content=form["content"],
                 html=parts["body"], author=user)
     post.tags = get_tags(form["tags"])
     post.slug = slugify(form["title"])
@@ -314,7 +321,10 @@ def save_entry():
     if not form["title"]:
         flask.flash("Sorry, but a title is required.")
         return flask.render_template("edit.html", entry=entry)
+    summary_parts = docutils.core.publish_parts(form["summary"], 
+                                                writer=Writer())
     parts = docutils.core.publish_parts(form["content"], writer=Writer())
+    entry.summary_html = summary_parts["body"]
     entry.html = parts["body"]
     db.session.commit()
     flask.flash('Post "%s" has been updated.' % (entry.title, ))

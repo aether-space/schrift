@@ -2,7 +2,7 @@
 {% block body %}
   <h2>{{ entry.title }}</h2>
   <div class="entry">
-      {{ entry.html | safe }}
+      {{ entry.html|safe }}
   </div>
   <div class="extra">
     This post was added on {{ entry.pub_date|datetimeformat('%d-%m-%Y') }} by {{ entry.author.name }}.<br>
