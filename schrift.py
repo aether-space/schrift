@@ -151,8 +151,8 @@ def get_tags(string):
     name, a new one will be crated and added to the database session.
     """
     tags = list()
-    for name in string.split(","):
-        name = name.strip()
+    names = set(name.strip() for name in string.split(","))
+    for name in names:
         tag = Tag.query.filter_by(tag=name).first()
         if tag is None:
             tag = Tag(name)
