@@ -27,7 +27,9 @@
             {% else %}
               <span>Logged in as {{ session.user_name }}.</span>
               <a href="{{ url_for('logout') }}">Log out</a>.
-              <a href="{{ url_for('add_entry_form') }}">Add a new post</a>.
+              {% if session.is_editor %}
+                <a href="{{ url_for('add_entry_form') }}">Add a new post</a>.
+              {% endif %}
               <br><br>
             {% endif %}
             Running on <em>schrift</em>.
