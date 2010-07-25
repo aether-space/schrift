@@ -21,7 +21,7 @@ SQLALCHEMY_DATABASE_URI = "sqlite:///blog.db"
 #SQLALCHEMY_ECHO = True
 
 BLOG_TITLE = "choblog"
-BLOG_SUBTITLE = "Tired musings of a chief hacking officer."
+BLOG_SUBTITLE = "A madmans raves."
 
 app = flask.Flask(__name__)
 app.config.from_object(__name__)
