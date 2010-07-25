@@ -1,5 +1,6 @@
 # coding: utf-8
 import datetime
+import functools
 import re
 import unicodedata
 
@@ -160,6 +161,16 @@ def get_tags(string):
         tags.append(tag)
     return tags
 
+def requires_login(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        print "called", "user_id" in flask.session
+        if not "user_id" in flask.session:
+            flask.session["real_url"] = flask.request.url
+            return flask.redirect(flask.url_for("login"))
+        return func(*args, **kwargs)
+    return wrapper
+
 def slugify(value):
     value = unicodedata.normalize("NFKD", value)
     value = value.translate({0x308: u"e", ord(u"ß"): u"ss"})
@@ -197,10 +208,8 @@ def show_entries_for_tag(tags):
     return show_entries(1, tags.split(","))
 
 @app.route("/delete/<slug>")
+@requires_login
 def delete_entry(slug):
-    if not "user_id" in flask.session:
-        flask.session["real_url"] = flask.request.url
-        return flask.redirect(flask.url_for("login"))
     entry = Post.query.filter_by(slug=slug).first_or_404()
     flask.flash('Post "%s" deleted.' % (entry.title, ))
     db.session.delete(entry)
@@ -237,10 +246,8 @@ def logout():
     return flask.redirect(flask.url_for("index"))
 
 @app.route("/add")
+@requires_login
 def add_entry_form(text="", tags=""):
-    if not "user_id" in flask.session:
-        flask.session["real_url"] = flask.request.url
-        return flask.redirect(flask.url_for("login_form"))
     return flask.render_template("add.html", text=text, tags=tags)
 
 @app.route("/add", methods=["POST"])
@@ -262,10 +269,8 @@ def add_entry():
     return flask.redirect(flask.url_for("index"))
 
 @app.route("/edit/<slug>")
+@requires_login
 def edit_entry_form(slug):
-    if not "user_id" in flask.session:
-        session.request["real_url"] = flask.request.url
-        return flask.redirect(flask.url_for("login"))
     entry = Post.query.filter_by(slug=slug).first_or_404()
     return flask.render_template("edit.html", entry=entry)
 
