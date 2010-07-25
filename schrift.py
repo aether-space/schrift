@@ -289,8 +289,8 @@ def logout():
     return flask.redirect(flask.url_for("index"))
 
 @app.route("/add")
-@requires_editor
 @requires_login
+@requires_editor
 def add_entry_form(text="", tags=""):
     return flask.render_template("add.html", text=text, tags=tags)
 
@@ -313,15 +313,15 @@ def add_entry():
     return flask.redirect(flask.url_for("index"))
 
 @app.route("/edit/<slug>")
-@requires_editor
 @requires_login
+@requires_editor
 def edit_entry_form(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
     return flask.render_template("edit.html", entry=entry)
 
 @app.route("/save", methods=["POST"])
 def save_entry():
-    if not "user_id" in flask.session or not flask.sessions["is_editor"]:
+    if not "user_id" in flask.session or not flask.session["is_editor"]:
         flask.abort(403)
     form = flask.request.form
     try:
