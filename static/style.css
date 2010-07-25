@@ -17,11 +17,15 @@ body {
 }
 
 .head, .page, .footer {
-    padding: 12px;
+    padding: 48px;
+}
+
+.head {
+    padding-bottom: 16px;
 }
 
 .page {
-    margin: 0 18px 12px 18px;
+    margin: 0 48px 0 48px;
     padding: 0;
 }
 
@@ -51,8 +55,9 @@ body {
     border-top: 2px solid #eee;
     color: #ccc;
     font-size: .75em;
-    margin: 12px;
+    margin: 24px 48px;
     text-align: right;
+    padding: 24px 0 48px;
 }
 
 .footer span {
@@ -116,29 +121,14 @@ body {
 }
 
 .nav {
+    float: right; 
     margin: 0 0 1em 0;
-    padding: 0 18px;
+    padding: 0 48px;
 }
 
 .nav li {
-    background: #c1d3de;
     display: inline;
-    margin-right: .5em;
-    padding: .25em .3em;
-}
-
-.nav li a {
-    text-decoration: none;
-}
-
-.nav li:hover,
-.nav li.active {
-    background: #1f3347;
-}
-
-.nav li:hover a,
-.nav li.active a {
-    color: #fff;
+    font-size: .75em;
 }
 
 /* OLD */
