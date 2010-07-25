@@ -57,6 +57,12 @@ class Tag(db.Model):
     def __init__(self, name):
         self.tag = name
 
+    def __str__(self):
+        return self.tag
+
+    def __repr__(self):
+        return "<Tag '%s'>" % (self.tag, )
+
 # Association table for tags
 post_tags = Table("post_tags", db.Model.metadata,
     db.Column("post_id", db.Integer, db.ForeignKey("posts.id")),
@@ -137,6 +143,22 @@ class Writer(docutils.writers.html4css1.Writer):
         self.translator_class = Translator
 
 ### Helpers
+
+def get_tags(string):
+    """
+    Given a string with comma-separated tag names, return the
+    corresponding `Tag` objects. If a tag cannot be found for a given
+    name, a new one will be crated and added to the database session.
+    """
+    tags = list()
+    for name in string.split(","):
+        name = name.strip()
+        tag = Tag.query.filter_by(tag=name).first()
+        if tag is None:
+            tag = Tag(name)
+            db.session.add(tag)
+        tags.append(tag)
+    return tags
 
 def slugify(value):
     value = unicodedata.normalize("NFKD", value)
@@ -233,16 +255,38 @@ def add_entry():
     user = User.query.get(flask.session["user_id"])
     post = Post(title=form["title"], content=form["content"],
                 html=parts["body"], author=user)
-    tags = [tag.strip() for tag in form["tags"].split(",")]
-    for name in tags:
-        tag = Tag.query.filter_by(tag=name).first()
-        if tag is None:
-            tag = Tag(name)
-            db.session.add(tag)
-        post.tags.append(tag)
+    post.tags = get_tags(form["tags"])
     post.slug = slugify(form["title"])
     db.session.add(post)
     db.session.commit()
+    return flask.redirect(flask.url_for("index"))
+
+@app.route("/edit/<slug>")
+def edit_entry_form(slug):
+    if not "user_id" in flask.session:
+        session.request["real_url"] = flask.request.url
+        return flask.redirect(flask.url_for("login"))
+    entry = Post.query.filter_by(slug=slug).first_or_404()
+    return flask.render_template("edit.html", entry=entry)
+
+@app.route("/save", methods=["POST"])
+def save_entry():
+    if not "user_id" in flask.session:
+        flask.abort(403)
+    form = flask.request.form
+    try:
+        entry = Post.query.get_or_404(int(form["id"]))
+    except ValueError:
+        flask.abort(404)
+    entry.content = form["content"]
+    entry.tags = get_tags(form["tags"])
+    if not form["title"]:
+        flask.flash("Sorry, but a title is required.")
+        return flask.render_template("edit.html", entry=entry)
+    parts = docutils.core.publish_parts(form["content"], writer=Writer())
+    entry.html = parts["body"]
+    db.session.commit()
+    flask.flash('Post "%s" has been updated.' % (entry.title, ))
     return flask.redirect(flask.url_for("index"))
 
 @app.route("/atom")

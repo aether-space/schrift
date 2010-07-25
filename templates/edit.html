@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block body %}
+   <form action="{{ url_for('save_entry') }}" method="post" class="edit-entry">
+      <dl>
+        <dt>Title:
+        <dd><input type="text" size="30" name="title" value="{{ entry.title }}">
+        <dt>Text:
+        <dd><textarea name="content" rows="5" cols="40">{{ entry.content }}</textarea>
+        <dt>Tags:
+        <dd><input type="text" size="30" name="tags" value="{{ entry.tags | join(", ") }}">
+	<dd><input type="hidden" name="id" value="{{ entry.id }} ">
+        <dd><input type="submit" value="Save">
+      </dl>
+  </form>
+{% endblock %}
