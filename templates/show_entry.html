@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
-  <h2>{{ entry.title }}</h2>
+  <h2>{% if session.is_editor %}<a href="{{ url_for("edit_entry_form", slug=entry.slug)}}">{{ entry.title }}{% else %}{{ entry.title }}{% endif %}</a></h2>
   <div class="entry">
       {{ entry.html|safe }}
   </div>
