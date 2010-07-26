@@ -367,7 +367,15 @@ def atom_feed():
 
 if __name__ == '__main__':
     import sys
-    if sys.argv[1:]:
-        app.run(sys.argv[1], int(sys.argv[2]))
+    args = sys.argv[1:]
+    if args:
+        if args[0] == "add_user":
+            user = User(args[1], args[2], editor=(len(args) == 4))
+            db.session.add(user)
+            db.session.commit()
+        elif args[0] == "init_db":
+            db.create_all()
+        else:
+            app.run(args[0], int(args[1]))
     else:
         app.run()
