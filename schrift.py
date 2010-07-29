@@ -349,7 +349,7 @@ def save_entry():
     entry.html = parts["body"]
     db.session.commit()
     flask.flash('Post "%s" has been updated.' % (entry.title, ))
-    return flask.redirect(flask.url_for("index"))
+    return flask.redirect(flask.url_for("show_entry", slug=entry.slug))
 
 @app.route("/atom")
 def atom_feed():
