@@ -226,6 +226,7 @@ def show_entries(page, tags=None):
     if not "user_id" in flask.session:
         query = query.filter(Post.private != True)
     query = query.order_by(Post.pub_date.desc())
+    query.count = lambda _count=query.count: _count() or 0
     page = query.paginate(page, 10, page != 1)
     return flask.render_template("show_entries.html", page=page)
 
