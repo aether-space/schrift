@@ -138,7 +138,26 @@ class CodeBlock(rst.Directive):
         node['lang'] = self.arguments[0]
         return [node]
 
+class Math(rst.Directive):
+    """
+    Directive for some latex-styled math.
+    """
+
+    has_content = True
+    required_arguments = 0
+    optional_arguments = 0
+    option_spec = {"aligned": rst.directives.flag}
+
+    def run(self):
+        if "aligned" in self.options:
+            container_text = "\\begin{aligned}\n%s\n\\end{aligned}"
+        else:
+            container_text = r"\[%s\]"
+        node = nodes.inline("", container_text % (u"\n".join(self.content), ))
+        return [node]
+
 rst.directives.register_directive('code-block', CodeBlock)
+rst.directives.register_directive("math", Math)
 
 class Translator(docutils.writers.html4css1.HTMLTranslator):
     def visit_CodeElement(self, node):
@@ -155,6 +174,14 @@ class Writer(docutils.writers.html4css1.Writer):
     def __init__(self):
         docutils.writers.html4css1.Writer.__init__(self)
         self.translator_class = Translator
+
+def math_role(role, rawtext, text, lineno, inliner,
+                       options={}, content=[]):
+    text = r"\(%s\)" % (docutils.utils.unescape(text, True), )
+    node = nodes.inline(rawtext, text, **options)
+    return [node], []
+
+rst.roles.register_canonical_role("math", math_role)
 
 ### Helpers
 
