@@ -185,6 +185,19 @@ rst.roles.register_canonical_role("math", math_role)
 
 ### Helpers
 
+def get_posts(tags=None):
+    query = Post.query.order_by(Post.pub_date.desc())
+    if tags is not None:
+        query = Post.query.join(Post.tags).filter(Tag.tag.in_(tags)) \
+                .group_by(Post.id) \
+                .having(func.count(Post.id) == len(tags))
+    if not "user_id" in flask.session:
+        query = query.filter(Post.private != True)
+    query = query.order_by(Post.pub_date.desc())
+    # XXX
+    query.count = lambda _count=query.count: _count() or 0
+    return query
+
 def get_tags(string):
     """
     Given a string with comma-separated tag names, return the
@@ -245,16 +258,7 @@ def index():
 
 @app.route("/<int:page>")
 def show_entries(page, tags=None):
-    query = Post.query.order_by(Post.pub_date.desc())
-    if tags is not None:
-        query = Post.query.join(Post.tags).filter(Tag.tag.in_(tags)) \
-                .group_by(Post.id) \
-                .having(func.count(Post.id) == len(tags))
-    if not "user_id" in flask.session:
-        query = query.filter(Post.private != True)
-    query = query.order_by(Post.pub_date.desc())
-    query.count = lambda _count=query.count: _count() or 0
-    page = query.paginate(page, 10, page != 1)
+    page = get_posts(tags).paginate(page, 10, page != 1)
     return flask.render_template("show_entries.html", page=page)
 
 @app.route("/archive")
@@ -263,15 +267,7 @@ def show_archive():
 
 @app.route("/archive/<int:page>")
 def show_archive_page(page, tags=None):
-    query = Post.query.order_by(Post.pub_date.desc())
-    if tags is not None:
-        query = Post.query.join(Post.tags).filter(Tag.tag.in_(tags)) \
-                .group_by(Post.id) \
-                .having(func.count(Post.id) == len(tags))
-    if not "user_id" in flask.session:
-        query = query.filter(Post.private != True)
-    query = query.order_by(Post.pub_date.desc())
-    page = query.paginate(page, 10, page != 1)
+    page = get_posts(tags).paginate(page, 10, page != 1)
     return flask.render_template("show_archive.html", page=page)
 
 @app.route("/tagged/<tags>")
