@@ -35,6 +35,12 @@ body {
     margin: 0;
 }
 
+h2 span {
+    font-size: 12px;
+    font-weight: normal;
+    letter-spacing: 0
+}
+
 .head h1 a {
     color: inherit;
     text-decoration: none;

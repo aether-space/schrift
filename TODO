@@ -1,4 +1,4 @@
 - Style login form
-- Style add an article form
-- Add edit/delete links to posts when logged in
+- Style add/edit an article form
 - Style pagination
+- Add a confirm on the delete page (with POST)

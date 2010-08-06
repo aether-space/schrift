@@ -274,15 +274,6 @@ def show_archive_page(page, tags=None):
 def show_entries_for_tag(tags):
     return show_entries(1, tags.split(","))
 
-@app.route("/delete/<slug>")
-@requires_login
-def delete_entry(slug):
-    entry = Post.query.filter_by(slug=slug).first_or_404()
-    flask.flash('Post "%s" deleted.' % (entry.title, ))
-    db.session.delete(entry)
-    db.session.commit()
-    return flask.redirect(flask.url_for("index"))
-
 @app.route("/read/<slug>")
 def show_entry(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
@@ -349,6 +340,17 @@ def add_entry():
 def edit_entry_form(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
     return flask.render_template("edit.html", entry=entry)
+
+@app.route("/delete/<slug>")
+@requires_login
+@requires_editor
+def delete_entry_form(slug):
+    entry = Post.query.filter_by(slug=slug).first_or_404()
+    flask.flash('Post "%s" deleted.' % (entry.title, ))
+    db.session.delete(entry)
+    db.session.commit()
+    return flask.redirect(flask.url_for("index"))
+
 
 @app.route("/save", methods=["POST"])
 def save_entry():
