@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 {% block body %}
-  <ul class=entries>
+  <ul class="entries archive">
   {% for entry in page.items %}
-  <li><a href="{{ url_for('show_entry', slug=entry.slug) }}">{{ entry.title }}</a> at {{ entry.pub_date|datetimeformat('%d-%m-%Y') }} by {{ entry.author.name }}.</li>
+  <li><a href="{{ url_for('show_entry', slug=entry.slug) }}">{{ entry.title }}</a> at {{ entry.pub_date|datetimeformat('%d-%m-%Y') }}.</li> 
   {% else %}
     <li><em>Nothing to see here.</em>
   {% endfor %}

@@ -74,6 +74,10 @@ body {
     padding: 0;
 }
 
+.entries.archive {
+    line-height: 1.5em
+}
+
 .entry {
     margin: 0.8em 1em;
 }
