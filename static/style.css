@@ -136,8 +136,8 @@ body {
 }
 
 /* OLD */
-.add-entry      { font-size: 0.9em; border-bottom: 1px solid #ccc; }
-.add-entry dl   { font-weight: bold; }
+.add-entry,.edit-entry      { font-size: 0.9em; border-bottom: 1px solid #ccc; }
+.add-entry dl,.edit-entry dl   { font-weight: bold; }
 .flash          { background: #c6d3dc; padding: 0.5em;
                   margin: 0 48px 20px 48px }
 .error          { background: #F0D6D6; padding: 0.5em; }
