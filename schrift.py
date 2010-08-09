@@ -275,7 +275,7 @@ def slugify(value):
     value = unicodedata.normalize("NFKD", value)
     value = value.translate({0x308: u"e", ord(u"ß"): u"ss"})
     value = value.encode("ascii", "ignore").lower()
-    value = re.sub(r'[^a-z\s-]', '', value).strip()
+    value = re.sub(r'[^a-z0-9\s-]', '', value).strip()
     return re.sub(r'[-\s]+', '-', value)
 
 ### Template filters
