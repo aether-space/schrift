@@ -96,6 +96,17 @@ class SchriftTest(unittest.TestCase):
         self.assertFalse(content in response.data)
         self.logout()
 
+    def test_duplicates(self):
+        title = u"Duplicated title"
+        read_url = "/read/" + schrift.slugify(title)
+        self.login("Author")
+        self.add_post(title, u"Spam")
+        self.add_post(title, u"Spam")
+        response = self.add_post(title, u"Spam")
+        self.assertTrue(read_url in response.data)
+        self.assertTrue(read_url + "-2" in response.data)
+        self.assertTrue(read_url + "-3" in response.data)
+
     def test_user(self):
         self.login("Author")
         title = u"A public post."

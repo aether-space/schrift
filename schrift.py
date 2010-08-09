@@ -1,6 +1,7 @@
 # coding: utf-8
 import datetime
 import functools
+import itertools
 import re
 import unicodedata
 
@@ -97,7 +98,7 @@ class Post(db.Model):
                         backref=sqlalchemy.orm.backref("posts", lazy="dynamic"))
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     title = db.Column(db.String(255), nullable=False)
-    slug = db.Column(db.String(255), nullable=False)
+    slug = db.Column(db.String(255), nullable=False, unique=True)
     summary = db.Column(db.Text)
     summary_html = db.Column(db.Text)
     content = db.Column(db.Text)
@@ -404,7 +405,15 @@ def add_entry():
                 summary_html=summary_parts["body"], content=form["content"],
                 html=parts["body"], author=user, private=("private" in form))
     post.tags = get_tags(form["tags"])
-    post.slug = slugify(form["title"])
+    slug = slugify(form["title"])
+    counter = None
+    while Post.query.filter_by(slug=slug).first():
+        if counter is None:
+            counter = itertools.count(2)
+            slug += '-' + str(counter.next())
+        else:
+            slug = "%s-%i" % (slug.rsplit("-", 1)[0], counter.next())
+    post.slug = slug
     db.session.add(post)
     db.session.commit()
     return flask.redirect(flask.url_for("index"))
