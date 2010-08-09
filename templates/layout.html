@@ -14,8 +14,8 @@
           <div class=flash>{{ message }}</div>
         {% endfor %}
         <ul class="nav">
-          <li><a href="{{ url_for('index') }}">Index</a>,</li>
-          <li><a href="{{ url_for('show_archive') }}">Archive</a></li>
+          <li><a href="{% if author %}{{ url_for('author_index', author=author.name) }}{% else %}{{ url_for('index') }}{% endif %}">Index</a>,</li>
+          <li><a href="{% if author %}{{ url_for('author_show_archive', author=author.name) }}{% else %}{{ url_for('show_archive') }}{% endif %}">Archive</a></li>
         </ul>
         <div class=page>
             {% block body %}{% endblock %}

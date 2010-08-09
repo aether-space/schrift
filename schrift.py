@@ -30,6 +30,12 @@ db = sqlalchemy.SQLAlchemy(app)
 
 ### Models
 
+# Association table for users (to look up which blog a user can read)
+blog_users = Table("blog_users", db.Model.metadata,
+    db.Column("reader_id", db.Integer, db.ForeignKey("users.id")),
+    db.Column("author_id", db.Integer, db.ForeignKey("users.id"))
+)
+
 class User(db.Model):
     __tablename__ = "users"
 
@@ -37,6 +43,11 @@ class User(db.Model):
     name = db.Column(db.String)
     password = db.Column(db.String(80))
     editor = db.Column(db.Boolean)
+    authors = sqlalchemy.orm.relationship("User",
+        primaryjoin=(blog_users.columns["reader_id"] == id),
+        secondaryjoin=(blog_users.columns["author_id"] == id),
+        secondary=blog_users
+    )
 
     def __init__(self, name, password, editor=False):
         self.name = name
@@ -103,19 +114,37 @@ class Post(db.Model):
         self.private = private
         self.pub_date = datetime.datetime.utcnow()
 
-    @werkzeug.cached_property
-    def next(self):
+    def get_previous(self, same_author=False):
         query = self.query.filter(Post.pub_date > self.pub_date)
         if not "user_id" in flask.session:
             query = query.filter(Post.private != True)
+        if same_author:
+            query = query.filter(Post.author == self.author)
         return query.order_by(Post.pub_date).first()
 
-    @werkzeug.cached_property
-    def prev(self):
+    def get_next(self, same_author=False):
         query = self.query.filter(Post.pub_date < self.pub_date)
         if not "user_id" in flask.session:
             query = query.filter(Post.private != True)
+        if same_author:
+            query = query.filter(Post.author == self.author)
         return query.order_by(Post.pub_date.desc()).first()
+
+    @werkzeug.cached_property
+    def next(self):
+        return self.get_previous()
+
+    @werkzeug.cached_property
+    def prev(self):
+        return self.get_next()
+
+    @werkzeug.cached_property
+    def next_of_same_author(self):
+        return self.get_next(True)
+
+    @werkzeug.cached_property
+    def prev_of_same_author(self):
+        return self.get_previous(True)
 
 ### ReST helpers
 
@@ -185,14 +214,19 @@ rst.roles.register_canonical_role("math", math_role)
 
 ### Helpers
 
-def get_posts(tags=None):
+def get_posts(author=None, tags=None):
     query = Post.query.order_by(Post.pub_date.desc())
     if tags is not None:
         query = Post.query.join(Post.tags).filter(Tag.tag.in_(tags)) \
                 .group_by(Post.id) \
                 .having(func.count(Post.id) == len(tags))
+    if author is not None:
+        query = query.filter_by(author=author)
     if not "user_id" in flask.session:
         query = query.filter(Post.private != True)
+    else:
+        allowed_to_read = [u.id for u in get_user().authors]
+        query = query.filter(Post.user_id.in_(allowed_to_read))
     query = query.order_by(Post.pub_date.desc())
     # XXX
     query.count = lambda _count=query.count: _count() or 0
@@ -213,6 +247,9 @@ def get_tags(string):
             db.session.add(tag)
         tags.append(tag)
     return tags
+
+def get_user():
+    return User.query.get(flask.session["user_id"])
 
 def requires_login(func):
     @functools.wraps(func)
@@ -257,30 +294,60 @@ def index():
     return show_entries(1)
 
 @app.route("/<int:page>")
-def show_entries(page, tags=None):
-    page = get_posts(tags).paginate(page, 10, page != 1)
-    return flask.render_template("show_entries.html", page=page)
+def show_entries(page, author=None, tags=None):
+    page = get_posts(author=author, tags=tags).paginate(page, 10, page != 1)
+    return flask.render_template("show_entries.html", author=author, page=page)
+
+@app.route("/<author>")
+def author_index(author):
+    author = User.query.filter_by(name=author).first_or_404()
+    return show_entries(1, author=author)
+
+@app.route("/<author>/<int:page>")
+def author_show_entries(page, author=None):
+    author = User.query.filter_by(name=author).first_or_404()
+    return show_entries(page, author=author)
 
 @app.route("/archive")
 def show_archive():
     return show_archive_page(1)
 
 @app.route("/archive/<int:page>")
-def show_archive_page(page, tags=None):
-    page = get_posts(tags).paginate(page, 10, page != 1)
-    return flask.render_template("show_archive.html", page=page)
+def show_archive_page(page, author=None, tags=None):
+    page = get_posts(author, tags).paginate(page, 10, page != 1)
+    return flask.render_template("show_archive.html", page=page, author=author)
+
+@app.route("/<author>/archive")
+def author_show_archive(author):
+    author = User.query.filter_by(name=author).first_or_404()
+    return show_archive_page(1, author=author)
+
+@app.route("/<author>/archive/<int:page>")
+def author_show_archive_page(author, page):
+    author = User.query.filter_by(name=author).first_or_404()
+    return show_archive_page(page, author=author)
 
 @app.route("/tagged/<tags>")
 def show_entries_for_tag(tags):
     return show_entries(1, tags.split(","))
 
 @app.route("/read/<slug>")
-def show_entry(slug):
+def show_entry(slug, author=None):
     entry = Post.query.filter_by(slug=slug).first_or_404()
-    if entry.private and not "user_id" in flask.session:
-        flask.session["real_url"] = flask.request.url
-        return flask.redirect(flask.url_for("login"))
-    return flask.render_template("show_entry.html", entry=entry)
+    if entry.private:
+        if not "user_id" in flask.session:
+            flask.session["real_url"] = flask.request.url
+            return flask.redirect(flask.url_for("login"))
+        if entry.author not in get_user().authors:
+            flask.abort(403)
+    elif author and entry.author != author:
+            flask.abort(404)
+    return flask.render_template("show_entry.html", entry=entry, author=author)
+
+@app.route("/<author>/read/<slug>")
+def author_show_entry(author, slug):
+    author = User.query.filter_by(name=author).first_or_404()
+    return show_entry(slug, author)
 
 @app.route("/login")
 def login_form():
@@ -346,6 +413,8 @@ def edit_entry_form(slug):
 @requires_editor
 def delete_entry_form(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
+    if entry.author.id != flask.session["user_id"]:
+        flask.abort(403)
     flask.flash('Post "%s" deleted.' % (entry.title, ))
     db.session.delete(entry)
     db.session.commit()
@@ -361,6 +430,8 @@ def save_entry():
         entry = Post.query.get_or_404(int(form["id"]))
     except ValueError:
         flask.abort(404)
+    if entry.author.id != flask.session["user_id"]:
+        flask.abort(403)
     entry.content = form["content"]
     entry.tags = get_tags(form["tags"])
     entry.private = "private" in form
@@ -377,13 +448,18 @@ def save_entry():
     return flask.redirect(flask.url_for("show_entry", slug=entry.slug))
 
 @app.route("/atom")
-def atom_feed():
+def atom_feed(author=None):
     feed = atom.AtomFeed(BLOG_TITLE, feed_url=flask.request.url,
                          url=flask.request.host_url,
                          subtitle=BLOG_SUBTITLE)
     query = Post.query.order_by(Post.pub_date.desc())
     if not "user_id" in flask.session:
         query = query.filter(Post.private != True)
+    else:
+        allowed_to_read = [u.id for u in get_user().authors]
+        query = query.filter(Post.user_id.in_(allowed_to_read))
+    if author is not None:
+        query = query.filter(Post.author == author)
     for post in query.limit(10):
         feed.add(post.title, post.html, content_type="html",
                  author=post.author.name,
@@ -391,12 +467,18 @@ def atom_feed():
                  updated=post.pub_date, published=post.pub_date)
     return feed.get_response()
 
+@app.route("/<author>/atom")
+def author_atom_feed(author):
+    author = User.query.filter_by(name=author).first_or_404()
+    return atom_feed(author)
+
 if __name__ == '__main__':
     import sys
     args = sys.argv[1:]
     if args:
         if args[0] == "add_user":
             user = User(args[1], args[2], editor=(len(args) == 4))
+            user.authors.add(user)
             db.session.add(user)
             db.session.commit()
         elif args[0] == "init_db":

@@ -7,6 +7,11 @@
     <li><em>Nothing to see here.</em>
   {% endfor %}
   </ul>
+  {% if author %}
+  {% if page.has_prev %}<a href="{{ url_for('author_show_archive_page', page=page.prev_num, author=author.name) }}">Previous</a>{% endif %}
+  {% if page.has_next %}<a href="{{ url_for('author_show_archive_page', page=page.next_num, author=author.name) }}">Next</a>{% endif %}
+  {% else %}
   {% if page.has_prev %}<a href="{{ url_for('show_archive_page', page=page.prev_num) }}">Previous</a>{% endif %}
   {% if page.has_next %}<a href="{{ url_for('show_archive_page', page=page.next_num) }}">Next</a>{% endif %}
+  {% endif %}
 {% endblock %}
