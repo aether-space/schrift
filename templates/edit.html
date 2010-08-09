@@ -7,7 +7,7 @@
         <dt>Summary:
         <dd><textarea name="summary" rows="5" cols="40">{{ entry.summary }}</textarea>
         <dt>Text:
-        <dd><textarea name="content" rows="5" cols="40">{{ entry.content }}</textarea>
+        <dd><textarea name="content" rows="5" cols="40">{{ entry.content or entry.html }}</textarea>
         <dt>Tags:
         <dd><input type="text" size="30" name="tags" value="{{ entry.tags | join(", ") }}">
         <dt>Private:
