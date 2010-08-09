@@ -11,7 +11,7 @@
   <div class="extra">
     This post was added on {{ entry.pub_date|datetimeformat('%d-%m-%Y') }} by {{ entry.author.name }}.<br>
     {% if author %}
-    {% if entry.prev_of_same_author %} &laquo; <a href="{{ url_for("author_show_entry", slug=entry.prev_of_same_author.slug) }}">Previous post</a> {% if entry.next_of_same_author %} - {% endif %} {% endif %} {% if entry.next_of_same_author %} <a href="{{ url_for("author_show_entry", slug=entry.next_of_same_author.slug) }}">Next post</a> &raquo; {% endif %}
+    {% if entry.prev_of_same_author %} &laquo; <a href="{{ url_for("author_show_entry", slug=entry.prev_of_same_author.slug, author=author.name) }}">Previous post</a> {% if entry.next_of_same_author %} - {% endif %} {% endif %} {% if entry.next_of_same_author %} <a href="{{ url_for("author_show_entry", slug=entry.next_of_same_author.slug, author=author.name) }}">Next post</a> &raquo; {% endif %}
     {% else %}
     {% if entry.prev %} &laquo; <a href="{{ url_for("show_entry", slug=entry.prev.slug) }}">Previous post</a> {% if entry.next %} - {% endif %} {% endif %} {% if entry.next %} <a href="{{ url_for("show_entry", slug=entry.next.slug) }}">Next post</a> &raquo; {% endif %}
     {% endif %}

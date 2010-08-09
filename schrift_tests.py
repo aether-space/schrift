@@ -96,6 +96,16 @@ class SchriftTest(unittest.TestCase):
         self.assertFalse(content in response.data)
         self.logout()
 
+    def test_user(self):
+        self.login("Author")
+        title = u"A public post."
+        content = u"This is a public post (test_user)."
+        read_url = "/Author/read/" + schrift.slugify(title)
+        response = self.add_post(title, content)
+        self.assertTrue(content in response.data)
+        response = self.app.get(read_url)
+        self.assertTrue(content in response.data)
+
     def test_slugify(self):
         self.assertEqual(schrift.slugify(u"ßpäm"), u"sspaem")
         self.assertEqual(schrift.slugify(u"slug With spaces"),
