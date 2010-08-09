@@ -43,6 +43,9 @@ class User(db.Model):
     name = db.Column(db.String)
     password = db.Column(db.String(80))
     editor = db.Column(db.Boolean)
+    blog_title = db.Column(db.String(100))
+    blog_subtitle = db.Column(db.String(100))
+    # A list of authors whose blog posts the user can read
     authors = sqlalchemy.orm.relationship("User",
         primaryjoin=(blog_users.columns["reader_id"] == id),
         secondaryjoin=(blog_users.columns["author_id"] == id),
@@ -294,14 +297,17 @@ def index():
     return show_entries(1)
 
 @app.route("/<int:page>")
-def show_entries(page, author=None, tags=None):
+def show_entries(page, author=None, tags=None, template_globals=None):
     page = get_posts(author=author, tags=tags).paginate(page, 10, page != 1)
-    return flask.render_template("show_entries.html", author=author, page=page)
+    return flask.render_template("show_entries.html", author=author, page=page,
+                                 **(template_globals or dict()))
 
 @app.route("/<author>")
 def author_index(author):
     author = User.query.filter_by(name=author).first_or_404()
-    return show_entries(1, author=author)
+    return show_entries(1, author=author,
+                        template_globals=dict(BLOG_TITLE=author.blog_title,
+                                              BLOG_SUBTITLE=author.blog_subtitle))
 
 @app.route("/<author>/<int:page>")
 def author_show_entries(page, author=None):
@@ -342,7 +348,9 @@ def show_entry(slug, author=None):
             flask.abort(403)
     elif author and entry.author != author:
             flask.abort(404)
-    return flask.render_template("show_entry.html", entry=entry, author=author)
+    return flask.render_template("show_entry.html", entry=entry, author=author,
+                                 BLOG_TITLE=entry.author.blog_title,
+                                 BLOG_SUBTITLE=entry.author.blog_subtitle)
 
 @app.route("/<author>/read/<slug>")
 def author_show_entry(author, slug):
