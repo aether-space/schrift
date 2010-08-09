@@ -47,6 +47,20 @@ class SchriftTest(unittest.TestCase):
         """
         return self.app.get("/logout", follow_redirects=True)
 
+    def test__empty_db(self):
+        """
+        Start with an empty database.
+        """
+        response = self.app.get("/")
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_logout(self):
+        for name in ["Author", "Reader", "Spam"]:
+            response = self.login(name)
+            self.assertTrue("Logged in as " + name in response.data)
+            response = self.logout()
+            self.assertTrue("logged out" in response.data)
+
     def test_private(self):
         self.login("Author")
         title = u"Post with a title"
