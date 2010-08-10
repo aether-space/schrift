@@ -61,6 +61,21 @@ class SchriftTest(unittest.TestCase):
             response = self.logout()
             self.assertTrue("logged out" in response.data)
 
+    def test_change_password(self):
+        self.login("Author")
+        response = self.app.post("/changepassword",
+                                 data=dict(old_password="", password=""))
+        self.assertTrue(u"A new password is required." in response.data)
+        response = self.app.post("/changepassword", follow_redirects=True,
+                                 data=dict(old_password="1235", password="9876"))
+        self.assertTrue(u"Password changed." in response.data)
+        response = self.app.post("/changepassword",
+                                 data=dict(old_password="1235", password="9876"))
+        self.assertTrue(u"Sorry, try again." in response.data)
+        # Change password back
+        self.app.post("/changepassword",
+                      data=dict(old_password="9876", password="1235"))
+
     def test_private(self):
         self.login("Author")
         title = u"Post with a title"

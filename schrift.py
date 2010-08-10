@@ -493,13 +493,34 @@ def author_atom_feed(author):
     author = User.query.filter_by(name=author).first_or_404()
     return atom_feed(author)
 
+@app.route("/changepassword")
+@requires_login
+def change_password_form():
+    return flask.render_template("change_password.html")
+
+@app.route("/changepassword", methods=["POST"])
+@requires_login
+def change_password():
+    user = get_user()
+    form = flask.request.form
+    if not form["password"]:
+        flask.flash(u"A new password is required.")
+    elif user.check_password(form["old_password"]):
+        flask.flash(u"Password changed.")
+        user.set_password(form["password"])
+        db.session.commit()
+        return flask.redirect(flask.url_for("index"))
+    else:
+        flask.flash(u"Sorry, try again.")
+    return change_password_form()
+
 if __name__ == '__main__':
     import sys
     args = sys.argv[1:]
     if args:
         if args[0] == "add_user":
             user = User(args[1], args[2], editor=(len(args) == 4))
-            user.authors.add(user)
+            user.authors.append(user)
             db.session.add(user)
             db.session.commit()
         elif args[0] == "init_db":
