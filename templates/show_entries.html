@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
-  <ul class=entries>
+  <ul class="entries">
   {% for entry in page.items %}
   <li><h2><a href="{% if author %}{{ url_for('author_show_entry', slug=entry.slug, author=author.name) }}{% else %}{{ url_for('show_entry', slug=entry.slug) }}{% endif %}">{{ entry.title }}</a></h2>
   <div class="entry">
