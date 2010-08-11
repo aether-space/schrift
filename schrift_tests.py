@@ -25,14 +25,14 @@ class SchriftTest(unittest.TestCase):
         schrift.db.session.add(self.unauthorized)
         schrift.db.session.commit()
 
-    def add_post(self, title, content, private=False):
+    def add_post(self, title, content, summary="", private=False):
         """
         Helper function to add a new blog post.
         """
         return self.app.post("/add", follow_redirects=True,
                              data=dict(title=title, content=content,
                                        private=private,
-                                       summary="", tags=""))
+                                       summary=summary, tags=""))
 
     def login(self, name):
         """
@@ -75,6 +75,20 @@ class SchriftTest(unittest.TestCase):
         # Change password back
         self.app.post("/changepassword",
                       data=dict(old_password="9876", password="1235"))
+
+    def test_edit(self):
+        self.login("Author")
+        title = u"Editing test post"
+        slug = schrift.slugify(title)
+        response = self.add_post(title, content="Spam", summary=u"Old summary.")
+        entry = schrift.db.session.query(schrift.Post).filter_by(slug=slug).first()
+        response = self.app.post("/save", follow_redirects=True,
+                                 data=dict(id=entry.id, summary=u"New summary",
+                                           title=title, content=u"New Spam",
+                                           tags=""))
+        self.assertTrue(u"New Spam" in response.data)
+        entry = schrift.db.session.query(schrift.Post).filter_by(slug=slug).first()
+        self.assertEquals(u"New summary", entry.summary)
 
     def test_private(self):
         self.login("Author")

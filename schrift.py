@@ -453,16 +453,17 @@ def save_entry():
         entry.html = form["content"]
     else:
         entry.content = form["content"]
+    entry.summary = form["summary"]
     entry.tags = get_tags(form["tags"])
     entry.private = "private" in form
     if not form["title"]:
         flask.flash("Sorry, but a title is required.")
         return flask.render_template("edit.html", entry=entry)
+    summary_parts = docutils.core.publish_parts(form["summary"], writer=Writer())
+    entry.summary_html = summary_parts["body"]
+    # Check that it is no html-only entry
     if entry.content or not entry.html:
-        summary_parts = docutils.core.publish_parts(form["summary"], 
-                                                    writer=Writer())
         parts = docutils.core.publish_parts(form["content"], writer=Writer())
-        entry.summary_html = summary_parts["body"]
         entry.html = parts["body"]
     db.session.commit()
     flask.flash('Post "%s" has been updated.' % (entry.title, ))
