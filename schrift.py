@@ -155,6 +155,9 @@ class Post(db.Model):
 class CodeElement(nodes.General, nodes.FixedTextElement):
     pass
 
+class DelElement(nodes.General, nodes.TextElement):
+    pass
+
 class CodeBlock(rst.Directive):
     """
     Directive for a code block.
@@ -203,10 +206,20 @@ class Translator(docutils.writers.html4css1.HTMLTranslator):
     def depart_CodeElement(self, node):
         self.body.append("</div>")
 
+    def visit_DelElement(self, node):
+        self.body.append(self.starttag(node, "del"))
+
+    def depart_DelElement(self, node):
+        self.body.append("</del>")
+
 class Writer(docutils.writers.html4css1.Writer):
     def __init__(self):
         docutils.writers.html4css1.Writer.__init__(self)
         self.translator_class = Translator
+
+def del_role(role, rawtext, text, lineno, inline, options={}, content=[]):
+    node = DelElement(rawtext, text, **options)
+    return [node], []
 
 def math_role(role, rawtext, text, lineno, inliner,
                        options={}, content=[]):
@@ -214,6 +227,7 @@ def math_role(role, rawtext, text, lineno, inliner,
     node = nodes.inline(rawtext, text, **options)
     return [node], []
 
+rst.roles.register_canonical_role("del", del_role)
 rst.roles.register_canonical_role("math", math_role)
 
 ### Helpers
