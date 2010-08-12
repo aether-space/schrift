@@ -473,6 +473,7 @@ def save_entry():
     if not form["title"]:
         flask.flash("Sorry, but a title is required.")
         return flask.render_template("edit.html", entry=entry)
+    entry.title = form["title"]
     summary_parts = docutils.core.publish_parts(form["summary"], writer=Writer())
     entry.summary_html = summary_parts["body"]
     # Check that it is no html-only entry

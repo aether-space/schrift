@@ -79,16 +79,18 @@ class SchriftTest(unittest.TestCase):
     def test_edit(self):
         self.login("Author")
         title = u"Editing test post"
+        new_title = u"An edited test post"
         slug = schrift.slugify(title)
         response = self.add_post(title, content="Spam", summary=u"Old summary.")
         entry = schrift.db.session.query(schrift.Post).filter_by(slug=slug).first()
         response = self.app.post("/save", follow_redirects=True,
                                  data=dict(id=entry.id, summary=u"New summary",
-                                           title=title, content=u"New Spam",
+                                           title=new_title, content=u"New Spam",
                                            tags=""))
         self.assertTrue(u"New Spam" in response.data)
         entry = schrift.db.session.query(schrift.Post).filter_by(slug=slug).first()
         self.assertEquals(u"New summary", entry.summary)
+        self.assertEquals(new_title, entry.title)
 
     def test_private(self):
         self.login("Author")
