@@ -350,7 +350,7 @@ def author_show_archive_page(author, page):
 
 @app.route("/tagged/<tags>")
 def show_entries_for_tag(tags):
-    return show_entries(1, tags.split(","))
+    return show_entries(1, tags=tags.split(","))
 
 @app.route("/read/<slug>")
 def show_entry(slug, author=None):

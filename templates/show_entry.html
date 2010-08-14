@@ -10,6 +10,7 @@
   </div>
   <div class="extra">
     This post was added on {{ entry.pub_date|datetimeformat('%d-%m-%Y') }} by <a href="{{ url_for('author_index', author=entry.author.name) }}">{{ entry.author.name }}</a>.<br>
+    {% if entry.tags %}Tagged as {% for tag in entry.tags|sort %}<a href="{{ url_for('show_entries_for_tag', tags=tag.tag) }}">{{ tag.tag }}</a>{% if not loop.last %}, {% else %}.{% endif %}{% endfor %}<br>{% endif %}
     {% if author %}
     {% if entry.prev_of_same_author %} &laquo; <a href="{{ url_for("author_show_entry", slug=entry.prev_of_same_author.slug, author=author.name) }}">Previous post</a> {% if entry.next_of_same_author %} - {% endif %} {% endif %} {% if entry.next_of_same_author %} <a href="{{ url_for("author_show_entry", slug=entry.next_of_same_author.slug, author=author.name) }}">Next post</a> &raquo; {% endif %}
     {% else %}
