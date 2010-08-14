@@ -259,6 +259,8 @@ def get_tags(string):
     tags = list()
     names = set(name.strip() for name in string.split(","))
     for name in names:
+        if not name:
+            continue
         tag = Tag.query.filter_by(tag=name).first()
         if tag is None:
             tag = Tag(name)
