@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block body %}
+  <h2>Change blog title</h2>
+  <form action="{{ url_for('change_title') }}" method="post">
+    <dl>
+      <dt>Title:
+      <dd><input type="text" name="title" value="{{ title }}" size="60">
+      <dt>Subtitle:
+      <dd><input type="text" name="subtitle" value="{{subtitle }}" size="60">
+      <dd><input type="submit" value="Change title">
+    </dl>
+  </form>
+{% endblock %}
