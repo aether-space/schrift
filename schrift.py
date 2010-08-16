@@ -532,6 +532,25 @@ def change_password():
         flask.flash(u"Sorry, try again.")
     return change_password_form()
 
+@app.route("/changetitle")
+@requires_login
+@requires_editor
+def change_title_form():
+    user = get_user()
+    return flask.render_template("change_title.html",title=user.blog_title,
+                                 subtitle=user.blog_subtitle)
+
+@app.route("/changetitle", methods=["POST"])
+@requires_login
+@requires_editor
+def change_title():
+    user = get_user()
+    user.blog_title = flask.request.form["title"]
+    user.blog_subtitle = flask.request.form["subtitle"]
+    db.session.commit()
+    flask.flash(u"Blog title updated.")
+    return flask.redirect(flask.url_for("index"))
+
 if __name__ == '__main__':
     import sys
     args = sys.argv[1:]
