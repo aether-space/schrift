@@ -227,8 +227,41 @@ def math_role(role, rawtext, text, lineno, inliner,
     node = nodes.inline(rawtext, text, **options)
     return [node], []
 
+def post_role(role, rawtext, text, lineno, inliner, options={}, content=[]):
+    try:
+        idxl = text.rindex(' <')
+        idxr = text.find('>', idxl + 1)
+        if idxr + 1 != len(text):
+            msg = inliner.reporter.error(
+                "Only 'slug' and 'title <slug>' are allowed; '%s' is invalid." \
+                    % (text, ), line=lineno)
+            prb = inliner.problematic(rawtext, rawtext, msg)
+            return [prb], [msg]
+
+        title = text[:idxl]
+        slug = text[idxl + 2:idxr]
+    except ValueError:
+        title = None
+        slug = text
+
+    entry = Post.query.filter_by(slug=slug).first()
+    if entry is None:
+        msg = inliner.reporter.error(
+            "Entry with slug '%s' doesn't exist." % (slug, ), line=lineno)
+        prb = inliner.problematic(rawtext, rawtext, msg)
+        return [prb], [msg]
+
+    if title is None:
+        title = entry.title
+
+    ref = flask.url_for('show_entry', slug=slug)
+    node = nodes.reference(rawtext, title, refuri=ref, **options)
+    return [node], []
+
+
 rst.roles.register_canonical_role("del", del_role)
 rst.roles.register_canonical_role("math", math_role)
+rst.roles.register_canonical_role("post", post_role)
 
 ### Helpers
 
