@@ -2,3 +2,4 @@
 - Style add/edit an article form
 - Style pagination
 - Add a confirm on the delete page (with POST)
+- code-block: display an error if the given file type is invalid
