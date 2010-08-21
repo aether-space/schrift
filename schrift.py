@@ -171,7 +171,16 @@ class CodeBlock(rst.Directive):
     def run(self):
         code = u'\n'.join(self.content)
         node = CodeElement(code)
-        node['lang'] = self.arguments[0]
+        try:
+            pygments.lexers.get_lexer_by_name(self.arguments[0])
+            node['lang'] = self.arguments[0]
+        except pygments.lexers.ClassNotFound:
+            node['lang'] = 'text'
+            error = self.state_machine.reporter.error(
+                "Error in '%s' directive: no lexer with name '%s' exists." % \
+                (self.name, self.arguments[0]), line=self.lineno)
+            return [error, node]
+
         return [node]
 
 class Math(rst.Directive):
