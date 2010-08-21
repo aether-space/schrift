@@ -354,15 +354,14 @@ def show_entries(page, author=None, tags=None, template_globals=None):
 
 @app.route("/<author>")
 def author_index(author):
-    author = User.query.filter_by(name=author).first_or_404()
-    return show_entries(1, author=author,
-                        template_globals=dict(BLOG_TITLE=author.blog_title,
-                                              BLOG_SUBTITLE=author.blog_subtitle))
+    return author_show_entries(1, author=author)
 
 @app.route("/<author>/<int:page>")
 def author_show_entries(page, author=None):
     author = User.query.filter_by(name=author).first_or_404()
-    return show_entries(page, author=author)
+    return show_entries(page, author=author,
+                        template_globals=dict(BLOG_TITLE=author.blog_title,
+                                              BLOG_SUBTITLE=author.blog_subtitle))
 
 @app.route("/archive")
 def show_archive():
