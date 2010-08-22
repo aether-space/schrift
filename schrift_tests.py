@@ -17,6 +17,7 @@ class SchriftTest(unittest.TestCase):
         """
         self.author = schrift.User("Author", "1235", editor=True)
         self.author.authors.append(self.author)
+        self.author.blog_title = u"Author s blog title"
         self.reader = schrift.User("Reader", "1235")
         self.reader.authors.append(self.author)
         self.unauthorized = schrift.User("Spam", "1235")
@@ -75,6 +76,19 @@ class SchriftTest(unittest.TestCase):
         # Change password back
         self.app.post("/changepassword",
                       data=dict(old_password="9876", password="1235"))
+
+    def test_blog_title(self):
+        # Add 11 blog posts (pagination needed)
+        self.login("Author")
+        for _ in xrange(11):
+            self.add_post(u"blog title test", content=u"Nothing.")
+        # Test itself
+        for url in ["/", "/2"]:
+            response = self.app.get(url)
+            self.assertTrue(schrift.BLOG_TITLE in response.data)
+        for url in ["/Author", "/Author/2"]:
+            response = self.app.get(url)
+            self.assertTrue(self.author.blog_title in response.data)
 
     def test_edit(self):
         self.login("Author")
