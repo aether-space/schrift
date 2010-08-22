@@ -533,7 +533,16 @@ def atom_feed(author=None):
         auth = flask.request.authorization
         if auth:
             user = User.query.filter_by(name=auth.username).first()
-            if user is None or not user.check_password(auth.password):
+            # The RFC does not specify which encoding is used for the
+            # password. latin1 seems to be widely used, but some
+            # browsers like chrome or opera send it utf-8
+            # encoded. Hence, we try to decode using utf-8 with a
+            # fallback to latin1.
+            try:
+                password = auth.password.decode("utf-8")
+            except UnicodeDecodeError:
+                password = auth.password.decode("latin1")
+            if user is None or not user.check_password(password):
                 flask.abort(403)
         else:
             return flask.Response(
