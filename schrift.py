@@ -541,9 +541,14 @@ def atom_feed(author=None):
                 401,
                 {"WWW-Authenticate": 'Basic realm="Login Required"'}
             )
-    feed = atom.AtomFeed(BLOG_TITLE, feed_url=flask.request.url,
-                         url=flask.request.host_url,
-                         subtitle=BLOG_SUBTITLE)
+    if author is not None:
+        title = author.blog_title
+        subtitle = author.blog_subtitle
+    else:
+        title = BLOG_TITLE
+        subtitle = BLOG_SUBTITLE
+    feed = atom.AtomFeed(title, feed_url=flask.request.url,
+                         url=flask.request.host_url, subtitle=subtitle)
     query = Post.query.order_by(Post.pub_date.desc())
     if not "user_id" in flask.session:
         query = query.filter(Post.private != True)

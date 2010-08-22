@@ -83,12 +83,12 @@ class SchriftTest(unittest.TestCase):
         for _ in xrange(11):
             self.add_post(u"blog title test", content=u"Nothing.")
         # Test itself
-        for url in ["/", "/2"]:
+        for url in ["/", "/2", "/atom"]:
             response = self.app.get(url)
-            self.assertTrue(schrift.BLOG_TITLE in response.data)
-        for url in ["/Author", "/Author/2"]:
+            self.assertTrue(schrift.BLOG_TITLE in response.data, url)
+        for url in ["/Author", "/Author/2", "/Author/atom"]:
             response = self.app.get(url)
-            self.assertTrue(self.author.blog_title in response.data)
+            self.assertTrue(self.author.blog_title in response.data, url)
 
     def test_edit(self):
         self.login("Author")
