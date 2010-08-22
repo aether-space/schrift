@@ -26,14 +26,17 @@ class SchriftTest(unittest.TestCase):
         schrift.db.session.add(self.unauthorized)
         schrift.db.session.commit()
 
-    def add_post(self, title, content, summary="", private=False):
+    def add_post(self, title, content, summary="", private=False,
+                 published=True):
         """
         Helper function to add a new blog post.
         """
-        return self.app.post("/add", follow_redirects=True,
-                             data=dict(title=title, content=content,
-                                       private=private,
-                                       summary=summary, tags=""))
+        data = dict(title=title, content=content, summary=summary, tags="")
+        if private:
+            data["private"] = "1"
+        if published:
+            data["published"] = "1"
+        return self.app.post("/add", follow_redirects=True, data=data)
 
     def login(self, name):
         """
@@ -140,6 +143,24 @@ class SchriftTest(unittest.TestCase):
         response = self.app.get("/atom")
         self.assertFalse(content in response.data)
         self.logout()
+
+    def test_unpublished(self):
+        self.login("Author")
+        title = u"Unpublished post"
+        slug = schrift.slugify(title)
+        self.add_post(title, u"Spam", published=False)
+        # Author should see the unpublished post
+        for url in ["/", "/Author", "/read/" + slug]:
+            response = self.app.get(url)
+            self.assertTrue(title in response.data, url)
+        self.logout()
+        # Everyone else not
+        for url in ["/", "/Author", "/atom"]:
+            response = self.app.get(url)
+            self.assertFalse(title in response.data, url)
+        # The post does not exist
+        response = self.app.get("/read/" + slug)
+        self.assertEquals(response.status_code, 404)
 
     def test_duplicates(self):
         title = u"Duplicated title"

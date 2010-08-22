@@ -12,6 +12,8 @@
         <dd><input type="text" size="30" name="tags" value="{{ entry.tags | join(", ") }}">
         <dt>Private:
         <dd><input type="checkbox" name="private" value="private" {% if entry.private %}checked="checked"{% endif %}>
+        <dt>Published:
+        <dd><input type="checkbox" name="published" value="published" {% if entry.published %}checked="checked"{% endif %}>
 	<dd><input type="hidden" name="id" value="{{ entry.id }} ">
         <dd><input type="submit" value="Save">
       </dl>

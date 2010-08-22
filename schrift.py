@@ -14,7 +14,7 @@ import werkzeug
 from docutils import nodes
 from docutils.parsers import rst
 from flaskext import sqlalchemy
-from sqlalchemy import func, Table
+from sqlalchemy import func, or_, Table
 from werkzeug.contrib import atom
 
 DEBUG = True
@@ -104,11 +104,13 @@ class Post(db.Model):
     content = db.Column(db.Text)
     html = db.Column(db.Text)
     private = db.Column(db.Boolean)
+    published = db.Column(db.Boolean)
     pub_date = db.Column(db.DateTime)
     tags = sqlalchemy.orm.relationship("Tag", secondary=post_tags,
                                        backref="posts")
 
-    def __init__(self, author, title, summary, summary_html, content, html, private=False):
+    def __init__(self, author, title, summary, summary_html, content, html,
+                 private=False, published=True):
         self.author = author
         self.title = title
         self.summary = summary
@@ -116,6 +118,7 @@ class Post(db.Model):
         self.content = content
         self.html = html
         self.private = private
+        self.published = published
         self.pub_date = datetime.datetime.utcnow()
 
     def get_previous(self, same_author=False):
@@ -283,10 +286,17 @@ def get_posts(author=None, tags=None):
     if author is not None:
         query = query.filter_by(author=author)
     if not "user_id" in flask.session:
-        query = query.filter(Post.private != True)
+        query = query.filter(Post.private != True) \
+                .filter(Post.published == True)
     else:
-        allowed_to_read = [u.id for u in get_user().authors]
+        user = get_user()
+        allowed_to_read = [u.id for u in user.authors]
         query = query.filter(Post.user_id.in_(allowed_to_read))
+        if user.editor:
+            query = query.filter(or_(Post.published == True,
+                                     Post.author == user))
+        else:
+            query = query.filter(Post.published == True)
     query = query.order_by(Post.pub_date.desc())
     # XXX
     query.count = lambda _count=query.count: _count() or 0
@@ -404,8 +414,11 @@ def show_entry(slug, author=None):
             return flask.redirect(flask.url_for("login"))
         if entry.author not in get_user().authors:
             flask.abort(403)
-    elif author and entry.author != author:
-            flask.abort(404)
+    if author and entry.author != author:
+        flask.abort(404)
+    if (not entry.published and not
+        ("user_id" in flask.session and entry.author == get_user())):
+        flask.abort(404)
     return flask.render_template("show_entry.html", entry=entry, author=author,
                                  BLOG_TITLE=entry.author.blog_title,
                                  BLOG_SUBTITLE=entry.author.blog_subtitle)
@@ -460,7 +473,8 @@ def add_entry():
     user = User.query.get(flask.session["user_id"])
     post = Post(title=form["title"], summary=form["summary"],
                 summary_html=summary_parts["body"], content=form["content"],
-                html=parts["body"], author=user, private=("private" in form))
+                html=parts["body"], author=user, private=("private" in form),
+                published=("published" in form))
     post.tags = get_tags(form["tags"])
     slug = slugify(form["title"])
     counter = None
@@ -513,6 +527,7 @@ def save_entry():
     entry.summary = form["summary"]
     entry.tags = get_tags(form["tags"])
     entry.private = "private" in form
+    entry.published = "published" in form
     if not form["title"]:
         flask.flash("Sorry, but a title is required.")
         return flask.render_template("edit.html", entry=entry)
@@ -558,7 +573,8 @@ def atom_feed(author=None):
         subtitle = BLOG_SUBTITLE
     feed = atom.AtomFeed(title, feed_url=flask.request.url,
                          url=flask.request.host_url, subtitle=subtitle)
-    query = Post.query.order_by(Post.pub_date.desc())
+    query = Post.query.order_by(Post.pub_date.desc()) \
+            .filter(Post.published == True)
     if not "user_id" in flask.session:
         query = query.filter(Post.private != True)
     elif "auth" in flask.request.args:
