@@ -317,7 +317,7 @@ def requires_login(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if not "user_id" in flask.session:
-            flask.flash("Sorry, you are not allowed to that. "
+            flask.flash("Sorry, you are not allowed to do that. "
                         "Please log in first.")
             flask.session["real_url"] = flask.request.url
             return flask.redirect(flask.url_for("login"))
