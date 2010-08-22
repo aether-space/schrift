@@ -2,4 +2,3 @@
 - Style add/edit an article form
 - Style pagination
 - Add a confirm on the delete page (with POST)
-- Add HTTP auth for atom feed

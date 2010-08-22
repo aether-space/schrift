@@ -529,12 +529,27 @@ def save_entry():
 
 @app.route("/atom")
 def atom_feed(author=None):
+    if "auth" in flask.request.args:
+        auth = flask.request.authorization
+        if auth:
+            user = User.query.filter_by(name=auth.username).first()
+            if user is None or not user.check_password(auth.password):
+                flask.abort(403)
+        else:
+            return flask.Response(
+                "Please authenticate.",
+                401,
+                {"WWW-Authenticate": 'Basic realm="Login Required"'}
+            )
     feed = atom.AtomFeed(BLOG_TITLE, feed_url=flask.request.url,
                          url=flask.request.host_url,
                          subtitle=BLOG_SUBTITLE)
     query = Post.query.order_by(Post.pub_date.desc())
     if not "user_id" in flask.session:
         query = query.filter(Post.private != True)
+    elif "auth" in flask.request.args:
+        allowed_to_read = [u.id for u in user.authors]
+        query = query.filter(Post.user_id.in_(allowed_to_read))
     else:
         allowed_to_read = [u.id for u in get_user().authors]
         query = query.filter(Post.user_id.in_(allowed_to_read))
