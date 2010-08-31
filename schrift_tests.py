@@ -144,6 +144,16 @@ class SchriftTest(unittest.TestCase):
         self.assertFalse(content in response.data)
         self.logout()
 
+    def test_private_auth_atom(self):
+        self.login("Author")
+        title = u"test_private_auth_atom"
+        self.add_post(title, "Spam", private=True)
+        self.logout()
+        response = self.app.get("/atom?auth",
+                                headers=[("Authorization",
+                                          "Basic QXV0aG9yOjEyMzU=")])
+        self.assertTrue(title in response.data)
+
     def test_unpublished(self):
         self.login("Author")
         title = u"Unpublished post"

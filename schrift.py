@@ -575,11 +575,11 @@ def atom_feed(author=None):
                          url=flask.request.host_url, subtitle=subtitle)
     query = Post.query.order_by(Post.pub_date.desc()) \
             .filter(Post.published == True)
-    if not "user_id" in flask.session:
-        query = query.filter(Post.private != True)
-    elif "auth" in flask.request.args:
+    if "auth" in flask.request.args:
         allowed_to_read = [u.id for u in user.authors]
         query = query.filter(Post.user_id.in_(allowed_to_read))
+    elif not "user_id" in flask.session:
+        query = query.filter(Post.private != True)
     else:
         allowed_to_read = [u.id for u in get_user().authors]
         query = query.filter(Post.user_id.in_(allowed_to_read))
