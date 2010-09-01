@@ -2,4 +2,5 @@
 - Style add/edit an article form
 - Style pagination
 - Add a confirm on the delete page (with POST)
-- Add option to display line numbers in code-bocks
+- get_users() should fail somehow if the user can't be found (redirect to an
+  error page the suggests deleting the session cookie)

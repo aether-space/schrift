@@ -334,6 +334,8 @@ def get_tags(string):
     return tags
 
 def get_user():
+    # XXX: this should fail somehow if we have a invalid session cookie;
+    # maybe redirect to an error page?
     return User.query.get(flask.session["user_id"])
 
 def requires_login(func):
@@ -480,7 +482,7 @@ def add_entry():
     if not form["title"]:
         flask.flash("Sorry, a title is required.")
         return add_entry_form(form["content"], form["tags"])
-    summary_parts = docutils.core.publish_parts(form["summary"], 
+    summary_parts = docutils.core.publish_parts(form["summary"],
                                                 writer=Writer())
     parts = docutils.core.publish_parts(form["content"], writer=Writer())
     user = User.query.get(flask.session["user_id"])
