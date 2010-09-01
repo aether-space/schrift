@@ -166,10 +166,17 @@ class CodeBlock(rst.Directive):
     Directive for a code block.
     """
 
+    styles = ('linenos', )
+
+    def style(argument):
+        return rst.directives.choice(argument, CodeBlock.styles)
+
     has_content = True
     required_arguments = 1
     optional_arguments = 0
-    option_spec = dict()
+    option_spec = {
+        'style': style
+    }
 
     def run(self):
         code = u'\n'.join(self.content)
@@ -183,6 +190,11 @@ class CodeBlock(rst.Directive):
                 "Error in '%s' directive: no lexer with name '%s' exists." % \
                 (self.name, self.arguments[0]), line=self.lineno)
             return [error, node]
+
+        style = self.options['style'].split(' ') if 'style' in self.options \
+          else []
+        for s in CodeBlock.styles:
+          node[s] = s in style
 
         return [node]
 
@@ -210,7 +222,8 @@ rst.directives.register_directive("math", Math)
 class Translator(docutils.writers.html4css1.HTMLTranslator):
     def visit_CodeElement(self, node):
         lexer = pygments.lexers.get_lexer_by_name(node["lang"])
-        formatter = pygments.formatters.get_formatter_by_name("html")
+        formatter = pygments.formatters.get_formatter_by_name("html",
+                                                              linenos=node['linenos'])
         code = pygments.highlight(node.rawsource, lexer, formatter)
         self.body.append(self.starttag(node, "div", CLASS="syntax"))
         self.body.append(code)
