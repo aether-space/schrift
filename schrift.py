@@ -181,6 +181,12 @@ class CodeBlock(rst.Directive):
     def run(self):
         code = u'\n'.join(self.content)
         node = CodeElement(code)
+
+        style = self.options['style'].split(' ') if 'style' in self.options \
+            else []
+        for s in CodeBlock.styles:
+            node[s] = s in style
+
         try:
             pygments.lexers.get_lexer_by_name(self.arguments[0])
             node['lang'] = self.arguments[0]
@@ -190,11 +196,6 @@ class CodeBlock(rst.Directive):
                 "Error in '%s' directive: no lexer with name '%s' exists." % \
                 (self.name, self.arguments[0]), line=self.lineno)
             return [error, node]
-
-        style = self.options['style'].split(' ') if 'style' in self.options \
-          else []
-        for s in CodeBlock.styles:
-          node[s] = s in style
 
         return [node]
 
