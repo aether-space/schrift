@@ -22,8 +22,8 @@ SECRET_KEY = "XI5auBoeiH2TErtf8Hfi"
 SQLALCHEMY_DATABASE_URI = "sqlite:///blog.db"
 #SQLALCHEMY_ECHO = True
 
-BLOG_TITLE = "choblog"
-BLOG_SUBTITLE = "A madmans raves."
+BLOG_TITLE = "Spamblog"
+BLOG_SUBTITLE = "And now for something completely different"
 
 app = flask.Flask(__name__)
 app.config.from_object(__name__)
@@ -517,13 +517,18 @@ def edit_entry_form(slug):
 @requires_editor
 def delete_entry_form(slug):
     entry = Post.query.filter_by(slug=slug).first_or_404()
+    return flask.render_template("confirm_delete.html", entry=entry)
+
+@app.route("/delete", methods=["POST"])
+@requires_login
+def delete_entry():
+    entry = Post.query.get_or_404(flask.request.form["id"])
     if entry.author.id != flask.session["user_id"]:
         flask.abort(403)
     flask.flash('Post "%s" deleted.' % (entry.title, ))
     db.session.delete(entry)
     db.session.commit()
     return flask.redirect(flask.url_for("index"))
-
 
 @app.route("/save", methods=["POST"])
 def save_entry():

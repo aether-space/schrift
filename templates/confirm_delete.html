@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block body %}
+  <h2>Delete Post</h2>
+  Really delete post <em>{{ entry.title }}</em>?
+  <form action="{{ url_for('delete_entry') }}" method="post">
+    <p>
+      <input type="hidden" name="id" value="{{ entry.id }}">
+      <input type="submit" value="Delete" style="float:left;margin-right:10px;">
+    </p>
+  </form>
+  <form action="{{ url_for('index') }}">
+    <input type="submit" value="Cancel" style="float:left;">
+  </form>
+{% endblock %}

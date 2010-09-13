@@ -64,6 +64,7 @@ h2 span {
     margin: 24px 48px;
     text-align: right;
     padding: 24px 0 48px;
+    clear: both;
 }
 
 .footer span {

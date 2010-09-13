@@ -1,6 +1,5 @@
 - Style login form
 - Style add/edit an article form
 - Style pagination
-- Add a confirm on the delete page (with POST)
 - get_users() should fail somehow if the user can't be found (redirect to an
   error page the suggests deleting the session cookie)
