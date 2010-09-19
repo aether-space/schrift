@@ -3,3 +3,4 @@
 - Style pagination
 - get_users() should fail somehow if the user can't be found (redirect to an
   error page the suggests deleting the session cookie)
+- Sort tags
