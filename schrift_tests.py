@@ -196,6 +196,25 @@ class SchriftTest(unittest.TestCase):
         response = self.app.get("/read/" + slug)
         self.assertEquals(response.status_code, 404)
 
+    def test_unpublished_prev_next(self):
+        self.login(self.author.name)
+        unpublished_title = u"Unpublished Post"
+        unpublished_read_url = "/read/" + schrift.slugify(unpublished_title)
+        self.add_post(unpublished_title, u"Spam", published=False)
+
+        title = u"Second Post"
+        read_url = "/read/" + schrift.slugify(title)
+        self.add_post(title, u"Spam")
+
+        # Author can see prev link
+        response = self.app.get(read_url)
+        self.assertTrue(unpublished_read_url in response.data)
+
+        # All others not
+        self.login(self.reader.name)
+        response = self.app.get(read_url)
+        self.assertFalse(unpublished_read_url in response.data)
+
     def test_duplicates(self):
         title = u"Duplicated title"
         read_url = "/read/" + schrift.slugify(title)
