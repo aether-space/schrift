@@ -144,6 +144,30 @@ class SchriftTest(unittest.TestCase):
         self.assertFalse(content in response.data)
         self.logout()
 
+    def test_private_prev_next(self):
+        self.login(self.author.name)
+        private_title = u"Private Post"
+        private_read_url = "/read/" + schrift.slugify(private_title)
+        self.add_post(private_title, u"Spam", private=True)
+
+        title = u"Second Post"
+        read_url = "/read/" + schrift.slugify(title)
+        self.add_post(title, u"Spam", private=False)
+
+        # Author can see prev link
+        response = self.app.get(read_url)
+        self.assertTrue(private_read_url in response.data)
+
+        # Reader, too
+        self.login(self.reader.name)
+        response = self.app.get(read_url)
+        self.assertTrue(private_read_url in response.data)
+
+        # The other reader not
+        self.login(self.unauthorized.name)
+        response = self.app.get(read_url)
+        self.assertFalse(private_read_url in response.data)
+
     def test_private_auth_atom(self):
         self.login("Author")
         title = u"test_private_auth_atom"
