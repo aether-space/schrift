@@ -305,7 +305,8 @@ def get_posts(author=None, tags=None):
     else:
         user = get_user()
         allowed_to_read = [u.id for u in user.authors]
-        query = query.filter(Post.user_id.in_(allowed_to_read))
+        query = query.filter(or_(Post.user_id.in_(allowed_to_read),
+                                 Post.private != True))
         if user.editor:
             query = query.filter(or_(Post.published == True,
                                      Post.author == user))
@@ -603,7 +604,8 @@ def atom_feed(author=None):
         query = query.filter(Post.private != True)
     else:
         allowed_to_read = [u.id for u in get_user().authors]
-        query = query.filter(Post.user_id.in_(allowed_to_read))
+        query = query.filter(or_(Post.user_id.in_(allowed_to_read),
+                                 Post.private != True))
     if author is not None:
         query = query.filter(Post.author == author)
     for post in query.limit(10):
