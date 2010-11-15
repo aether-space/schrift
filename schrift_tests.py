@@ -143,6 +143,22 @@ class SchriftTest(unittest.TestCase):
         response = self.app.get("/atom")
         self.assertFalse(content in response.data)
         self.logout()
+        # But spam is allowed to read public posts by Author
+        self.login("Author")
+        title = u"Post with a title (public)"
+        content = u"This is the post's content (test_private)."
+        read_url = "/read/" + schrift.slugify(title)
+        response = self.add_post(title, content, private=False)
+        self.assertTrue(content in response.data)
+        self.logout()
+        self.login("Spam")
+        response = self.app.get("/")
+        self.assertTrue(content in response.data)
+        response = self.app.get(read_url)
+        self.assertTrue(content in response.data)
+        response = self.app.get("/atom")
+        self.assertTrue(content in response.data)
+        self.logout()
 
     def test_private_prev_next(self):
         self.login(self.author.name)
