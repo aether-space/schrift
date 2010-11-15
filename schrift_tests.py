@@ -159,6 +159,13 @@ class SchriftTest(unittest.TestCase):
         response = self.app.get("/atom")
         self.assertTrue(content in response.data)
         self.logout()
+        # ... and unidentified users are allowed to read public posts by Author
+        response = self.app.get("/")
+        self.assertTrue(content in response.data)
+        response = self.app.get(read_url)
+        self.assertTrue(content in response.data)
+        response = self.app.get("/atom")
+        self.assertTrue(content in response.data)
 
     def test_private_prev_next(self):
         self.login(self.author.name)
