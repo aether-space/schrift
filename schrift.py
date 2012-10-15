@@ -13,7 +13,7 @@ import pygments.lexers, pygments.formatters
 import werkzeug
 from docutils import nodes
 from docutils.parsers import rst
-from flaskext import sqlalchemy
+import flask_sqlalchemy as sqlalchemy
 from sqlalchemy import func, or_, Table
 from werkzeug.contrib import atom
 
